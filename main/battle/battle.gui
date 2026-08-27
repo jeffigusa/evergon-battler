@@ -1,0 +1,122 @@
+script: "/main/battle/battle.gui_script"
+fonts {
+  name: "default"
+  font: "/builtins/fonts/default.font"
+}
+textures {
+  name: "test"
+  texture: "/assets/test/test.atlas"
+}
+nodes {
+  position {
+    x: 960.0
+    y: 540.0
+  }
+  size {
+    x: 1920.0
+    y: 1080.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  position {
+    y: 104.0
+  }
+  size {
+    x: 1550.0
+    y: 750.0
+  }
+  color {
+    x: 0.6
+    y: 0.6
+    z: 0.6
+  }
+  type: TYPE_BOX
+  id: "map"
+  parent: "root"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: -1260.0
+    y: 579.0
+  }
+  size {
+    x: 150.0
+    y: 100.0
+  }
+  color {
+    x: 0.7019608
+    y: 0.7019608
+    z: 0.7019608
+  }
+  type: TYPE_BOX
+  id: "maptile_template"
+  parent: "map"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: -1324.0
+    y: 730.0
+  }
+  size {
+    x: 60.0
+    y: 60.0
+  }
+  type: TYPE_BOX
+  texture: "test/IMG_1218_edits"
+  id: "combatant_template"
+  parent: "map"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: -1351.0
+    y: 892.0
+  }
+  scale {
+    x: 2.0
+    y: 2.0
+  }
+  color {
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "<dmg>"
+  font: "default"
+  id: "dmg_text_template"
+  parent: "map"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: -398.0
+  }
+  type: TYPE_BOX
+  id: "deployment"
+  parent: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  size {
+    x: 1200.0
+    y: 150.0
+  }
+  color {
+    x: 0.5019608
+    y: 0.5019608
+    z: 0.5019608
+  }
+  type: TYPE_BOX
+  id: "combatants"
+  parent: "deployment"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

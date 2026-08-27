@@ -1,0 +1,91 @@
+local Combatant = require 'main.combatant.combatant'
+local Battle = require 'main.battle.battle'
+
+local M
+M = {
+	add_combatant = function(combatant)
+		local combatant_data = Combatant.get_data(combatant.prototype)
+		local template = gui.get_node('combatant_template')
+		local node = gui.clone(template)
+		gui.set_id(node, combatant.id)
+		gui.set_position(node, combatant.position)
+		local colors = {
+			weak = vmath.vector4(0.5, 0.5, 0.5, 1),
+			normal = vmath.vector4(1),
+			strong = vmath.vector4(1, 0.3, 0.3, 1),
+			tough = vmath.vector4(0.3, 0.3, 1, 1),
+		}
+		local color = colors[combatant.prototype] or vmath.vector4(1)
+		if combatant.team == 'enemy' then color = color + vmath.vector4(-0.3,-0.3,-0.3, 0) end
+		gui.set_color(node, color)
+	end,
+	move_combatant = function(combatant)
+		local node = gui.get_node(combatant.id)
+		gui.set_position(node, combatant.position)
+	end,
+	set_combatant_facing = function(combatant)
+		local node = gui.get_node(combatant.id)
+		if hash(combatant.facing) == hash('right') then
+			gui.set(node, 'euler.y', 0)
+		elseif hash(combatant.facing) == hash('left') then
+			gui.set(node, 'euler.y', 180)
+		end
+	end,
+	defeat_combatant = function(combatant)
+		local node = gui.get_node(combatant.id)
+		gui.delete_node(node)
+	end,
+	show_combatant_attack = function(combatant)
+		local combatant_data = Combatant.get_data(combatant.prototype)
+		local node = gui.get_node(combatant.id)
+		gui.cancel_animation(node, 'euler.z')
+		gui.set(node, 'euler.z', 0)
+		local euler_wind_up, euler_attack = 20, -20
+		local attack_time = 1/combatant_data.attack_speed
+		if hash(combatant.facing) == hash('left') then euler_wind_up = -euler_wind_up euler_attack = -euler_attack end
+		gui.animate(node, 'euler.z', euler_wind_up, gui.EASING_INOUTSINE, attack_time * 0.5, 0, function()
+			gui.animate(node, 'euler.z', euler_attack, gui.EASING_INOUTSINE, attack_time * 0.25, 0, function()
+				gui.animate(node, 'euler.z', 0, gui.EASING_INOUTSINE, attack_time * 0.25)
+			end)
+		end)
+	end,
+	take_dmg = function(combatant, dmg)
+		local offset = vmath.vector3(0,50,0)
+		local drift = vmath.vector3(0,50,0)
+		local template = gui.get_node('dmg_text_template')
+		local node = gui.clone(template)
+		gui.set_position(node, combatant.position + offset)
+		gui.set_text(node, dmg)
+		gui.animate(node, 'position.y', combatant.position + offset + drift, gui.EASING_LINEAR, 0.5)
+		gui.animate(node, 'color.w', 0, gui.EASING_LINEAR, 0.1, 0.4, function() gui.delete_node(node) end)
+	end
+}
+
+local set_combatants = function()
+	for i, v in ipairs(Battle.combatants) do
+		M.add_combatant(v)
+	end
+end
+
+function init(self)
+	
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash('combatant_moved') then
+		M.move_combatant(message.combatant)
+	elseif message_id == hash('combatant_facing') then
+		M.set_combatant_facing(message.combatant)
+	elseif message_id == hash('combatant_attacked') then
+		M.show_combatant_attack(message.combatant)
+	elseif message_id == hash('combatant_defeated') then
+		M.defeat_combatant(message.combatant)
+	elseif message_id == hash('combatant_took_dmg') then
+		M.take_dmg(message.combatant, message.dmg)
+	elseif message_id == hash('set_combatants') then
+		set_combatants()
+		timer.delay(0, false, function()
+			msg.post('main:/example#example_battle', 'start_combat')
+		end)
+	end
+end
