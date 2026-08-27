@@ -18,6 +18,10 @@ M = {
 		local color = colors[combatant.prototype] or vmath.vector4(1)
 		if combatant.team == 'enemy' then color = color + vmath.vector4(-0.3,-0.3,-0.3, 0) end
 		gui.set_color(node, color)
+		gui.set_texture(node, 'test')
+		if combatant_data.idle_animation and pcall(gui.play_flipbook, node, combatant_data.idle_animation) then
+			gui.play_flipbook(node, combatant_data.idle_animation)
+		end
 	end,
 	move_combatant = function(combatant)
 		local node = gui.get_node(combatant.id)
@@ -35,19 +39,49 @@ M = {
 		local node = gui.get_node(combatant.id)
 		gui.delete_node(node)
 	end,
-	show_combatant_attack = function(combatant)
+	cancel_combatant_attack = function(combatant)
 		local combatant_data = Combatant.get_data(combatant.prototype)
 		local node = gui.get_node(combatant.id)
-		gui.cancel_animation(node, 'euler.z')
-		gui.set(node, 'euler.z', 0)
-		local euler_wind_up, euler_attack = 20, -20
-		local attack_time = 1/combatant_data.attack_speed
-		if hash(combatant.facing) == hash('left') then euler_wind_up = -euler_wind_up euler_attack = -euler_attack end
-		gui.animate(node, 'euler.z', euler_wind_up, gui.EASING_INOUTSINE, attack_time * 0.5, 0, function()
-			gui.animate(node, 'euler.z', euler_attack, gui.EASING_INOUTSINE, attack_time * 0.25, 0, function()
-				gui.animate(node, 'euler.z', 0, gui.EASING_INOUTSINE, attack_time * 0.25)
+		gui.cancel_flipbook(node)
+		gui.play_flipbook(node, combatant_data.idle_animation)
+	end,
+	show_combatant_attack = function(combatant)
+		local combatant_data = Combatant.get_data(combatant.prototype)
+		local initial_target = combatant.target
+		local node = gui.get_node(combatant.id)
+		if combatant_data.attack_animation then
+			gui.play_flipbook(node, combatant_data.attack_animation, function()
+				gui.play_flipbook(node, combatant_data.idle_animation)
 			end)
-		end)
+			if combatant_data.is_ranged then
+				local defender_node = gui.get_node(combatant.target)
+				local target_position = gui.get_position(defender_node)
+				timer.delay(combatant_data.projectile_launch_delay, false, function()
+					local attacker_now = Battle.get_combatant(combatant.id)
+					local defender = Battle.get_combatant(combatant.target)
+					if not attacker_now or not defender
+						or attacker_now.hp <=0 or defender.hp <= 0
+						or hash(attacker_now.state) ~= hash('attacking')
+						or defender.id ~= initial_target then
+							return
+					end
+					local offset = target_position - combatant.position
+					local angle = math.atan2(offset.y, offset.x)
+					local rotation = vmath.quat_rotation_z(angle)
+					if pcall(gui.get_position, defender_node) then target_position = gui.get_position(defender_node) end
+					local projectile_node = gui.new_box_node(vmath.vector3(), vmath.vector3(30))
+					gui.set_rotation(projectile_node, rotation)
+					gui.set_texture(projectile_node, 'test')
+					gui.play_flipbook(projectile_node, combatant_data.projectile_animation)
+					local duration = vmath.length(offset)/combatant_data.projectile_speed
+					gui.set_parent(projectile_node, gui.get_node('map'))
+					gui.set_position(projectile_node, combatant.position)
+					gui.animate(projectile_node, 'position', target_position, gui.EASING_LINEAR, duration, 0, function()
+						gui.delete_node(projectile_node)
+					end)
+				end)
+			end
+		end
 	end,
 	take_dmg = function(combatant, dmg)
 		local offset = vmath.vector3(0,50,0)
@@ -78,6 +112,8 @@ function on_message(self, message_id, message, sender)
 		M.set_combatant_facing(message.combatant)
 	elseif message_id == hash('combatant_attacked') then
 		M.show_combatant_attack(message.combatant)
+	elseif message_id == hash('combatant_attack_cancelled') then
+		M.cancel_combatant_attack(message.combatant)
 	elseif message_id == hash('combatant_defeated') then
 		M.defeat_combatant(message.combatant)
 	elseif message_id == hash('combatant_took_dmg') then

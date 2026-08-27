@@ -64,11 +64,10 @@ nodes {
     y: 730.0
   }
   size {
-    x: 60.0
-    y: 60.0
+    x: 80.0
+    y: 80.0
   }
   type: TYPE_BOX
-  texture: "test/IMG_1218_edits"
   id: "combatant_template"
   parent: "map"
   inherit_alpha: true

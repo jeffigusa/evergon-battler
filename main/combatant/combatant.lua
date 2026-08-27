@@ -26,15 +26,26 @@ M.get_data = function(prototype)
 end
 
 M.combatants = {
-    weak = {
+    ranged = {
         hp = 10,
+        is_ranged = true,
         range = 200,
         attack = 2,
-        defense = 1
+        defense = 1,
+        attack_animation = 'ranged_1_attack',
+        idle_animation = 'ranged_1_idle',
+        projectile_animation = 'projectile_ranged_1',
+        projectile_launch_delay = 5/9,
+        projectile_speed = 400
     },
-    normal = {},
+    normal = {
+        attack_animation = 'melee_1_attack',
+        idle_animation = 'melee_1_idle'
+    },
     tough = {
         hp = 30,
+        attack_animation = 'melee_1_attack',
+        idle_animation = 'melee_1_idle'
     },
     strong = {
         attack = 5,

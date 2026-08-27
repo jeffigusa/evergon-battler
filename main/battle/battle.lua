@@ -68,9 +68,7 @@ M.attack = function(attacker)
     attacker.state = 'attacking'
     local attacker_data = Combatant.get_data(attacker.prototype)
     local attack_time = 1/attacker_data.attack_speed
-    timer.delay(attack_time, false, function()
-        attacker.state = 'acquiring_target'
-    end)
+    attacker.attack_cooldown = attack_time
     local defender = M.get_combatant(attacker.target)
     timer.delay(attack_time/2, false, function()
         if not attacker or not defender then return end
@@ -79,6 +77,17 @@ M.attack = function(attacker)
         end
     end)
     msg.post(battle_url, 'combatant_attacked', {combatant=attacker})
+end
+
+M.handle_attacking = function(attacker, dt)
+    local defender = M.get_combatant(attacker.target)
+    if not defender or defender.hp <= 0 or attacker.attack_cooldown <= 0 then
+        msg.post(battle_url, 'combatant_attack_cancelled', {combatant=attacker})
+        attacker.state = 'acquiring_target'
+        attacker.attack_cooldown = 0
+    else
+        attacker.attack_cooldown = attacker.attack_cooldown - dt
+    end
 end
 
 local avoidance_radius = 40
@@ -218,6 +227,7 @@ M.tick_combat = function(dt)
         if hash(v.state) == hash('idle') then M.get_target(v) if v.target then v.state = 'acquiring_target' end
         elseif hash(v.state) == hash('acquiring_target') then M.acquire_target(v)
         elseif hash(v.state) == hash('advancing') then M.advance(v, dt)
+        elseif hash(v.state) == hash('attacking') then M.handle_attacking(v, dt)
         elseif hash(v.state) == hash('starting_attack') then M.attack(v)
         end
     end
@@ -236,6 +246,7 @@ M.take_dmg = function(combatant, dmg)
     if combatant.hp > 0 then
         msg.post(battle_url, 'combatant_took_dmg', {combatant=combatant, dmg=dmg})
     else
+        combatant.state = 'defeated'
         M.defeat_combatant(combatant)
     end
 end
