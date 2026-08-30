@@ -1,0 +1,190 @@
+script: "/main/battle/deployment.gui_script"
+fonts {
+  name: "default"
+  font: "/builtins/fonts/default.font"
+}
+textures {
+  name: "combatants"
+  texture: "/assets/combatants/combatants.atlas"
+}
+nodes {
+  position {
+    x: 960.0
+    y: 540.0
+  }
+  size {
+    x: 1920.0
+    y: 1080.0
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  position {
+    y: 104.0
+  }
+  size {
+    x: 1800.0
+    y: 800.0
+  }
+  color {
+    x: 0.6
+    y: 0.6
+    z: 0.6
+  }
+  type: TYPE_BOX
+  id: "map"
+  parent: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  position {
+    x: 50.0
+    y: -450.0
+  }
+  type: TYPE_BOX
+  id: "deployment"
+  parent: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  size {
+    x: 1300.0
+    y: 150.0
+  }
+  color {
+    x: 0.5019608
+    y: 0.5019608
+    z: 0.5019608
+  }
+  type: TYPE_BOX
+  id: "combatants"
+  parent: "deployment"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: -1402.0
+    y: 1321.0
+  }
+  size {
+    x: 100.0
+    y: 150.0
+  }
+  type: TYPE_BOX
+  id: "combatant_card_template"
+  parent: "combatants"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  size {
+    x: 100.0
+    y: 150.0
+  }
+  type: TYPE_BOX
+  id: "combatant_card_template_panel"
+  parent: "combatant_card_template"
+  inherit_alpha: true
+}
+nodes {
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  texture: "combatants/melee_1_idle"
+  id: "combatant_card_template_art"
+  parent: "combatant_card_template"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: -824.0
+    y: 52.0
+  }
+  type: TYPE_BOX
+  id: "active_combatant"
+  parent: "deployment"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  size {
+    x: 300.0
+    y: 250.0
+  }
+  type: TYPE_BOX
+  id: "active_combatant_panel"
+  parent: "active_combatant"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: 50.0
+  }
+  size {
+    x: 150.0
+    y: 150.0
+  }
+  type: TYPE_BOX
+  texture: "combatants/melee_1_idle"
+  id: "active_combatant_art"
+  parent: "active_combatant"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: 838.0
+    y: -271.0
+  }
+  size {
+    x: 200.0
+    y: 100.0
+  }
+  type: TYPE_BOX
+  id: "button_start"
+  parent: "root"
+  inherit_alpha: true
+  size_mode: SIZE_MODE_AUTO
+}
+nodes {
+  scale {
+    x: 2.0
+    y: 2.0
+  }
+  color {
+    x: 0.0
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_TEXT
+  text: "Start"
+  font: "default"
+  id: "button_start_text"
+  parent: "button_start"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: -1716.0
+    y: 925.0
+  }
+  type: TYPE_TEMPLATE
+  id: "combatant_template"
+  parent: "root"
+  inherit_alpha: true
+  template: "/main/battle/combatant_template.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "combatant_template/node"
+  parent: "combatant_template"
+  template_node_child: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

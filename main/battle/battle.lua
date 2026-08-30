@@ -1,15 +1,16 @@
 local Combatant = require 'main.combatant.combatant'
+local urls = require 'main.urls'
 local M = {}
-
-local battle_url = 'main:/battle#battle'
 
 M.combat_started = false
 M.combatants = {}
 
 M.add_combatant = function(prototype, team, position)
-    local combatant = Combatant.new(prototype, team, position)
+    local combatant = Combatant.new(prototype, team)
+    combatant.position = position
     combatant.previous_position = position
     table.insert(M.combatants, combatant)
+    return combatant
 end
 
 M.get_combatant = function(id)
@@ -17,7 +18,6 @@ M.get_combatant = function(id)
 end
 
 M.get_target = function(combatant)
-    print(combatant.prototype..combatant.id..'is getting a new target')
     local closest, closest_distance
     local set_closest = function(v, distance) closest = v closest_distance = distance end
     for i, v in ipairs(M.combatants) do
@@ -41,10 +41,10 @@ M.update_facing = function(attacker)
     local offset = defender.position - attacker.position
     if offset.x < 0 and hash(attacker.facing) == hash('right') then
         attacker.facing = 'left'
-        msg.post(battle_url, 'combatant_facing', {combatant=attacker})
+        msg.post(urls.battle, 'combatant_facing', {combatant=attacker})
     elseif offset.x > 0 and hash(attacker.facing) == hash('left') then
         attacker.facing = 'right'
-        msg.post(battle_url, 'combatant_facing', {combatant=attacker})
+        msg.post(urls.battle, 'combatant_facing', {combatant=attacker})
     end
 end
 
@@ -63,7 +63,6 @@ M.acquire_target = function(attacker)
 end
 
 M.attack = function(attacker)
-    print(attacker.prototype..attacker.id..'is attacking target')
     M.update_facing(attacker)
     attacker.state = 'attacking'
     local attacker_data = Combatant.get_data(attacker.prototype)
@@ -76,13 +75,13 @@ M.attack = function(attacker)
             M.hit(attacker, defender)
         end
     end)
-    msg.post(battle_url, 'combatant_attacked', {combatant=attacker})
+    msg.post(urls.battle, 'combatant_attacked', {combatant=attacker})
 end
 
 M.handle_attacking = function(attacker, dt)
     local defender = M.get_combatant(attacker.target)
     if not defender or defender.hp <= 0 or attacker.attack_cooldown <= 0 then
-        msg.post(battle_url, 'combatant_attack_cancelled', {combatant=attacker})
+        msg.post(urls.battle, 'combatant_attack_cancelled', {combatant=attacker})
         attacker.state = 'acquiring_target'
         attacker.attack_cooldown = 0
     else
@@ -144,7 +143,7 @@ M.move = function(combatant, position)
     if position.x < combatant.position.x then combatant.facing = 'left' elseif position.x > combatant.position.x then combatant.facing = 'right' end
     combatant.position = position
 
-    msg.post(battle_url, 'combatant_moved', {combatant=combatant})
+    msg.post(urls.battle, 'combatant_moved', {combatant=combatant})
 end
 
 M.advance = function(attacker, dt)
@@ -175,7 +174,6 @@ M.advance = function(attacker, dt)
 
     local cannot_advance = vmath.dot(direction, normalized_direction) <= 0
     if cannot_advance and not attacker.is_stuck then
-        print(attacker.prototype..attacker.id..' is stuck')
         attacker.is_stuck = true
         if not attacker.escape_attempts then
             attacker.escape_attempts = 0
@@ -241,10 +239,9 @@ M.hit = function(attacker, defender)
 end
 
 M.take_dmg = function(combatant, dmg)
-    print('combatant took dmg:'..combatant.prototype..combatant.id..' : '..dmg)
     combatant.hp = combatant.hp - dmg
     if combatant.hp > 0 then
-        msg.post(battle_url, 'combatant_took_dmg', {combatant=combatant, dmg=dmg})
+        msg.post(urls.battle, 'combatant_took_dmg', {combatant=combatant, dmg=dmg})
     else
         combatant.state = 'defeated'
         M.defeat_combatant(combatant)
@@ -252,8 +249,7 @@ M.take_dmg = function(combatant, dmg)
 end
 
 M.defeat_combatant = function(combatant)
-    print('combatant was defeated:'..combatant.prototype..combatant.id)
-    msg.post(battle_url, 'combatant_defeated', {combatant=combatant})
+    msg.post(urls.battle, 'combatant_defeated', {combatant=combatant})
     for i, v in ipairs(M.combatants) do
        if v.id == combatant.id then table.remove(M.combatants, i) return end
     end

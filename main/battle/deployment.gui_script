@@ -1,0 +1,116 @@
+local utils = require 'main.utils.basic_utils'
+local gui_module = require 'main.utils.gui_module'
+local mygui
+local gui_utils = require 'main.utils.gui_utils'
+local urls = require 'main.urls'
+
+local Combatant = require 'main.combatant.combatant'
+local Battle = require 'main.battle.battle'
+
+local Player = require 'main.player.player'
+
+local Deployment, Map
+
+Map = {
+	display = {},
+	init = function(self)
+		local map_node = gui.get_node('map')
+		local button = mygui.create_button(map_node, function(params)
+			if #Deployment.to_deploy == 0 then return end
+			local position = vmath.vector3(params.x, params.y, 0)
+			position = position - gui_utils.get_absolute_position(map_node)
+			Deployment:place_combatant(Deployment.active_combatant, position)
+		end)
+	end,
+}
+
+Deployment = {
+	to_deploy = {},
+	display = {},
+	init = function(self)
+		self.active_combatant = Player.party[1].id
+		for i, v in ipairs(Player.party) do	table.insert(self.to_deploy, v)	end
+		self:update_display()
+
+		local start_button_node = gui.get_node('button_start')
+		mygui.create_button(start_button_node, function()
+			Battle.start_combat()
+			self:close()
+		end)
+
+	end,
+
+	update_display = function(self)
+		for i, v in ipairs(self.display) do gui.delete_node(v.node) end
+		self.display = {}
+		local active_i = utils.findIndex(self.to_deploy, self.active_combatant, 'id', 1)
+		for i, combatant in ipairs(self.to_deploy) do
+			local combatant_data = Combatant.get_data(combatant.prototype)
+			if combatant.id == self.active_combatant then
+				-- render the active party member
+				local art = gui.get_node('active_combatant_art')
+				gui.set_texture(art, 'combatants')
+				gui_utils.set_texture_with_default_placeholder(art, 'combatants', combatant_data.idle_animation, '_placeholder')
+			else
+				-- render the non-active party members on bar
+				local template = gui.get_node('combatant_card_template')
+				local tree = gui.clone_tree(template)
+				local node = tree.combatant_card_template
+				local art = tree.combatant_card_template_art
+				gui.set_texture(node, 'combatants')
+				if combatant_data.idle_animation then
+					gui.play_flipbook(art, combatant_data.idle_animation)
+				end
+				table.insert(self.display, {node=node, id=combatant.id})
+				local i_mod = 0 if active_i and i > active_i then i_mod = -1 end -- account for active_combatant being pulled out of the bar
+				local x = utils.get_distance_from_center(i + i_mod, #self.to_deploy-1, 110)
+				gui.set_position(node, vmath.vector3(x, 0, 0))
+				gui.set_parent(node, gui.get_node('deployment'))
+			end
+		end
+
+		gui.set_enabled(gui.get_node('active_combatant'), #self.to_deploy > 0)
+	end,
+
+	active_combatant = nil,
+	select_combatant = function(self, id) self.active_combatant = id end,
+	place_combatant = function(self, id, position)
+		local party_member = utils.search(self.to_deploy, function(v) return v.id == id end)
+		pprint('placing party_member:', id, position)
+		local combatant = Battle.add_combatant(party_member.prototype, 'player', position)
+		msg.post(urls.battle, 'combatant_added', {combatant = combatant})
+		table.remove(self.to_deploy, 1)
+		if #self.to_deploy > 0 then
+			self.active_combatant = self.to_deploy[1].id
+		else
+			self.active_combatant = nil
+		end
+		self:update_display()
+	end,
+	close = function(self)
+		gui.set_enabled(gui.get_node('root'), false)
+	end
+}
+
+function init(self)
+	msg.post('.', 'acquire_input_focus')
+	mygui = gui_module.new(self, {})
+	-- test
+	for i, v in ipairs({'normal','normal','normal','normal','normal','ranged','ranged','ranged'}) do Player.recruit(v) end
+	msg.post('.', 'new_round')
+	Map:init()
+end
+
+function final(self)
+	
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash('new_round') then
+		Deployment:init()
+	end
+end
+
+function on_input(self, action_id, action)
+	mygui.handle_input(action_id, action)
+end

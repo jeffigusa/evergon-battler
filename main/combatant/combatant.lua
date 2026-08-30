@@ -1,7 +1,7 @@
-local utils = require 'main.utils.utils'
+local utils = require 'main.utils.basic_utils'
 local M = {}
 
-M.new = function(prototype, team, position)
+M.new = function(prototype, team)
     local prototype_data = M.get_data(prototype)
     local combatant = {
         id=utils.get_uid(),
@@ -11,7 +11,7 @@ M.new = function(prototype, team, position)
         statuses = {},
         team = team,
         target = nil,
-        position = position,
+        position = nil,
         momentum = vmath.vector3(),
         advance_attempts = 0,
         facing = 'right',
@@ -35,7 +35,7 @@ M.combatants = {
         attack_animation = 'ranged_1_attack',
         idle_animation = 'ranged_1_idle',
         projectile_animation = 'projectile_ranged_1',
-        projectile_launch_delay = 5/9,
+        projectile_launch_delay = 0.5,
         projectile_speed = 400
     },
     normal = {
@@ -57,7 +57,7 @@ local combatant_defaults = {
     attack = 3,
     attack_speed = 1,
     defense = 2,
-    range = 60,
+    range = 50,
     move_speed = 150,
     radius = 40,
     tags = {}

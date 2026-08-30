@@ -6,13 +6,9 @@ embedded_instances {
   "  id: \"battle\"\n"
   "  component: \"/main/battle/battle.gui\"\n"
   "}\n"
-  ""
-}
-embedded_instances {
-  id: "example"
-  data: "components {\n"
-  "  id: \"example_battle\"\n"
-  "  component: \"/main/example_battle.script\"\n"
+  "components {\n"
+  "  id: \"deployment\"\n"
+  "  component: \"/main/battle/deployment.gui\"\n"
   "}\n"
   ""
 }

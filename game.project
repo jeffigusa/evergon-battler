@@ -1,9 +1,14 @@
 [project]
-title = Auto Battler
+title = Evergon Battler
 developer = Jeff Igusa
+custom_resources = res/
+dependencies#0 = https://github.com/britzl/defold-richtext/archive/refs/tags/5.22.1.zip
+dependencies#1 = https://github.com/subsoap/defos/archive/refs/tags/v2.8.7.zip
+
 
 [bootstrap]
 main_collection = /main/main.collectionc
+render = /main/render/custom_render.renderc
 
 [input]
 game_binding = /input/game.input_bindingc
