@@ -72,7 +72,13 @@ M.attack = function(attacker)
     timer.delay(attack_time/2, false, function()
         if not attacker or not defender then return end
         if attacker.hp > 0 and defender.hp > 0 then
-            M.hit(attacker, defender)
+            if attacker_data.is_ranged then
+                local distance_to_target = vmath.length(defender.position - attacker.position)
+                local time_to_target = distance_to_target / attacker_data.projectile_speed
+                timer.delay(time_to_target, false, function() M.hit(attacker, defender) end)
+            else
+                M.hit(attacker, defender)
+            end
         end
     end)
     msg.post(urls.battle_proxy, 'combatant_attacked', {combatant=attacker})
@@ -120,7 +126,7 @@ M.get_escape_direction = function(attacker)
     local escape_scalar = 0
     local defender = M.get_combatant(attacker.target)
     local offset = defender.position - attacker.position
-    
+
     for i, v in ipairs(M.combatants) do
         if v.id ~= defender.id and v.id ~= attacker.id and hash(v.team) == hash(attacker.team) then
             local offset_escape = v.position - attacker.position
@@ -243,12 +249,14 @@ M.take_dmg = function(combatant, dmg)
     if combatant.hp > 0 then
         msg.post(urls.battle_proxy, 'combatant_took_dmg', {combatant=combatant, dmg=dmg})
     else
-        combatant.state = 'defeated'
-        M.defeat_combatant(combatant)
+        if hash(combatant.state) ~= hash('defeated') then
+            M.defeat_combatant(combatant)
+        end
     end
 end
 
 M.defeat_combatant = function(combatant)
+    combatant.state = 'defeated'
     msg.post(urls.battle_proxy, 'combatant_defeated', {combatant=combatant})
     for i, v in ipairs(M.combatants) do
         if v.id == combatant.id then table.remove(M.combatants, i) break end

@@ -18,6 +18,7 @@ M = {
 		local hp_bar = tree['combatant_template/hp']
 		local hp_bar_fill = tree['combatant_template/hp_fill']
 		local bar = bars.new(hp_bar, hp_bar_fill, nil, combatant.hp, combatant.max_hp)
+		if combatant.hp == combatant.max_hp then bar.hide() end
 		table.insert(M.display, {id=combatant.id, node=node, bar=bar})
 
 		gui.set_id(node, combatant.id)
@@ -104,6 +105,7 @@ M = {
 	take_dmg = function(combatant, dmg)
 		local display = M.get_display(combatant.id)
 		local node = display.node
+		if combatant.hp ~= combatant.max_hp then display.bar.show() end
 		display.bar.set_fill(combatant.hp)
 		local euler = 10
 		gui.cancel_animations(node, 'euler.z')
@@ -140,7 +142,7 @@ function init(self)
 	set_enemies()
 
 	-- increase timescale for testing
-	-- msg.post(urls.battle, 'set_time_step', {factor = 3, mode=0})
+	msg.post(urls.battle, 'set_time_step', {factor = 3, mode=0})
 end
 
 function update(selt, dt)

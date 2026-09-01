@@ -119,11 +119,16 @@ nodes {
 }
 nodes {
   position {
-    y: 65.0
+    y: 68.0
   }
   size {
     x: 100.0
-    y: 20.0
+    y: 14.0
+  }
+  color {
+    x: 0.5019608
+    y: 0.0
+    z: 0.0
   }
   type: TYPE_BOX
   id: "combatant_card_template_hp"
@@ -133,7 +138,6 @@ nodes {
 nodes {
   position {
     x: -50.0
-    y: 68.0
   }
   size {
     x: 100.0
@@ -146,7 +150,7 @@ nodes {
   type: TYPE_BOX
   id: "combatant_card_template_hp_fill"
   pivot: PIVOT_W
-  parent: "combatant_card_template"
+  parent: "combatant_card_template_hp"
   inherit_alpha: true
 }
 nodes {
@@ -192,6 +196,11 @@ nodes {
     x: 300.0
     y: 20.0
   }
+  color {
+    x: 0.5019608
+    y: 0.0
+    z: 0.0
+  }
   type: TYPE_BOX
   id: "active_combatant_hp"
   parent: "active_combatant"
@@ -200,7 +209,6 @@ nodes {
 nodes {
   position {
     x: -150.0
-    y: 115.0
   }
   size {
     x: 300.0
@@ -213,7 +221,7 @@ nodes {
   type: TYPE_BOX
   id: "active_combatant_hp_fill"
   pivot: PIVOT_W
-  parent: "active_combatant"
+  parent: "active_combatant_hp"
   inherit_alpha: true
 }
 nodes {

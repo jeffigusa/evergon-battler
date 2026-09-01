@@ -19,11 +19,15 @@ nodes {
     x: 60.0
     y: 10.0
   }
+  color {
+    x: 0.5019608
+    y: 0.0
+    z: 0.0
+  }
   type: TYPE_BOX
   id: "hp"
   parent: "node"
   inherit_alpha: true
-  visible: false
 }
 nodes {
   position {
