@@ -1,4 +1,5 @@
 local utils = require 'main.utils.basic_utils'
+local bars = require 'main.utils.bars'
 local gui_module = require 'main.utils.gui_module'
 local mygui
 local gui_utils = require 'main.utils.gui_utils'
@@ -19,7 +20,7 @@ Map = {
 			if #Deployment.to_deploy == 0 then return end
 			local position = vmath.vector3(params.x, params.y, 0)
 			position = position - gui_utils.get_absolute_position(map_node)
-			Deployment:place_combatant(Deployment.active_combatant, position)
+			Deployment:place_combatant(Deployment.active_id, position)
 		end)
 	end,
 }
@@ -27,8 +28,11 @@ Map = {
 Deployment = {
 	to_deploy = {},
 	display = {},
+	active_display = {},
 	init = function(self)
-		self.active_combatant = Player.party[1].id
+		local active_combatant = Player.party[1]
+		self.active_id = active_combatant.id
+		self.active_display.bar = bars.new(gui.get_node('active_combatant_hp'), gui.get_node('active_combatant_hp_fill'), nil, active_combatant.hp, active_combatant.max_hp)
 		for i, v in ipairs(Player.party) do	table.insert(self.to_deploy, v)	end
 		self:update_display()
 
@@ -37,20 +41,21 @@ Deployment = {
 			Battle.start_combat()
 			self:close()
 		end)
-
 	end,
 
 	update_display = function(self)
 		for i, v in ipairs(self.display) do gui.delete_node(v.node) end
 		self.display = {}
-		local active_i = utils.findIndex(self.to_deploy, self.active_combatant, 'id', 1)
+		local active_i = utils.findIndex(self.to_deploy, self.active_id, 'id', 1)
 		for i, combatant in ipairs(self.to_deploy) do
 			local combatant_data = Combatant.get_data(combatant.prototype)
-			if combatant.id == self.active_combatant then
+			if combatant.id == self.active_id then
 				-- render the active party member
 				local art = gui.get_node('active_combatant_art')
 				gui.set_texture(art, 'combatants')
 				gui_utils.set_texture_with_default_placeholder(art, 'combatants', combatant_data.idle_animation, '_placeholder')
+				self.active_display.bar.set_max(combatant.max_hp)
+				self.active_display.bar.set_fill(combatant.hp)
 			else
 				-- render the non-active party members on bar
 				local template = gui.get_node('combatant_card_template')
@@ -61,11 +66,13 @@ Deployment = {
 				if combatant_data.idle_animation then
 					gui.play_flipbook(art, combatant_data.idle_animation)
 				end
+				local bar = bars.new(tree.combatant_card_template_hp, tree.combatant_card_template_hp_fill, nil, combatant.hp, combatant.max_hp)
+
 				table.insert(self.display, {node=node, id=combatant.id})
 				local i_mod = 0 if active_i and i > active_i then i_mod = -1 end -- account for active_combatant being pulled out of the bar
-				local x = utils.get_distance_from_center(i + i_mod, #self.to_deploy-1, 110)
+				local x = (i + i_mod) * 110
 				gui.set_position(node, vmath.vector3(x, 0, 0))
-				gui.set_parent(node, gui.get_node('deployment'))
+				gui.set_parent(node, gui.get_node('combatants'))
 			end
 		end
 
@@ -73,42 +80,33 @@ Deployment = {
 	end,
 
 	active_combatant = nil,
-	select_combatant = function(self, id) self.active_combatant = id end,
+	select_combatant = function(self, id) self.active_id = id end,
 	place_combatant = function(self, id, position)
 		local party_member = utils.search(self.to_deploy, function(v) return v.id == id end)
-		pprint('placing party_member:', id, position)
-		local combatant = Battle.add_combatant(party_member.prototype, 'player', position)
-		msg.post(urls.battle, 'combatant_added', {combatant = combatant})
+		party_member.position = position
+		Battle.add_combatant(party_member)
+		msg.post(urls.battle_proxy, 'combatant_added', {combatant = party_member})
 		table.remove(self.to_deploy, 1)
 		if #self.to_deploy > 0 then
-			self.active_combatant = self.to_deploy[1].id
+			self.active_id = self.to_deploy[1].id
 		else
-			self.active_combatant = nil
+			self.active_id = nil
 		end
 		self:update_display()
 	end,
 	close = function(self)
 		gui.set_enabled(gui.get_node('root'), false)
+		for i, v in ipairs(self.display) do gui.delete_node(v.node) end
 	end
 }
 
 function init(self)
+	msg.post(urls.battle, 'acquire_input_focus')
 	msg.post('.', 'acquire_input_focus')
 	mygui = gui_module.new(self, {})
-	-- test
-	for i, v in ipairs({'normal','normal','normal','normal','normal','ranged','ranged','ranged'}) do Player.recruit(v) end
-	msg.post('.', 'new_round')
+
 	Map:init()
-end
-
-function final(self)
-	
-end
-
-function on_message(self, message_id, message, sender)
-	if message_id == hash('new_round') then
-		Deployment:init()
-	end
+	Deployment:init()
 end
 
 function on_input(self, action_id, action)

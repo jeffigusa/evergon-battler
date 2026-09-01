@@ -1,0 +1,41 @@
+fonts {
+  name: "default"
+  font: "/builtins/fonts/default.font"
+}
+textures {
+  name: "combatants"
+  texture: "/assets/combatants/combatants.atlas"
+}
+nodes {
+  size {
+    x: 400.0
+    y: 500.0
+  }
+  type: TYPE_BOX
+  id: "node"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  size {
+    x: 300.0
+    y: 400.0
+  }
+  type: TYPE_BOX
+  id: "panel"
+  parent: "node"
+  inherit_alpha: true
+}
+nodes {
+  size {
+    x: 250.0
+    y: 250.0
+  }
+  type: TYPE_BOX
+  texture: "combatants/_placeholder"
+  id: "art"
+  parent: "node"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

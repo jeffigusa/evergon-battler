@@ -1,0 +1,47 @@
+textures {
+  name: "combatants"
+  texture: "/assets/combatants/combatants.atlas"
+}
+nodes {
+  size {
+    x: 80.0
+    y: 80.0
+  }
+  type: TYPE_BOX
+  id: "node"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: 30.0
+  }
+  size {
+    x: 60.0
+    y: 10.0
+  }
+  type: TYPE_BOX
+  id: "hp"
+  parent: "node"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  position {
+    x: -30.0
+  }
+  size {
+    x: 60.0
+    y: 10.0
+  }
+  color {
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "hp_fill"
+  pivot: PIVOT_W
+  parent: "hp"
+  inherit_alpha: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT

@@ -62,9 +62,24 @@ nodes {
     z: 0.5019608
   }
   type: TYPE_BOX
-  id: "combatants"
+  id: "combatant_panel"
   parent: "deployment"
   inherit_alpha: true
+}
+nodes {
+  position {
+    x: -650.0
+  }
+  size {
+    x: 1300.0
+    y: 150.0
+  }
+  type: TYPE_BOX
+  id: "combatants"
+  pivot: PIVOT_W
+  parent: "deployment"
+  inherit_alpha: true
+  visible: false
 }
 nodes {
   position {
@@ -104,6 +119,38 @@ nodes {
 }
 nodes {
   position {
+    y: 65.0
+  }
+  size {
+    x: 100.0
+    y: 20.0
+  }
+  type: TYPE_BOX
+  id: "combatant_card_template_hp"
+  parent: "combatant_card_template"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: -50.0
+    y: 68.0
+  }
+  size {
+    x: 100.0
+    y: 14.0
+  }
+  color {
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "combatant_card_template_hp_fill"
+  pivot: PIVOT_W
+  parent: "combatant_card_template"
+  inherit_alpha: true
+}
+nodes {
+  position {
     x: -824.0
     y: 52.0
   }
@@ -134,6 +181,38 @@ nodes {
   type: TYPE_BOX
   texture: "combatants/melee_1_idle"
   id: "active_combatant_art"
+  parent: "active_combatant"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    y: 115.0
+  }
+  size {
+    x: 300.0
+    y: 20.0
+  }
+  type: TYPE_BOX
+  id: "active_combatant_hp"
+  parent: "active_combatant"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: -150.0
+    y: 115.0
+  }
+  size {
+    x: 300.0
+    y: 20.0
+  }
+  color {
+    y: 0.0
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "active_combatant_hp_fill"
+  pivot: PIVOT_W
   parent: "active_combatant"
   inherit_alpha: true
 }
@@ -178,12 +257,24 @@ nodes {
   id: "combatant_template"
   parent: "root"
   inherit_alpha: true
-  template: "/main/battle/combatant_template.gui"
+  template: "/main/combatant/combatant_template.gui"
 }
 nodes {
   type: TYPE_BOX
   id: "combatant_template/node"
   parent: "combatant_template"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "combatant_template/hp"
+  parent: "combatant_template/node"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "combatant_template/hp_fill"
+  parent: "combatant_template/hp"
   template_node_child: true
 }
 material: "/builtins/materials/gui.material"

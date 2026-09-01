@@ -4,6 +4,9 @@ images {
 images {
   image: "/assets/combatants/_placeholder.png"
 }
+images {
+  image: "/assets/combatants/defensive_1_idle.png"
+}
 animations {
   id: "melee_1_attack"
   images {
@@ -70,6 +73,31 @@ animations {
     image: "/assets/combatants/ranged_1_idle.png"
   }
   playback: PLAYBACK_LOOP_FORWARD
+  fps: 5
+}
+animations {
+  id: "defensive_1_attack"
+  images {
+    image: "/assets/combatants/defensive_1_attack_1.png"
+  }
+  images {
+    image: "/assets/combatants/defensive_1_attack_2.png"
+  }
+  images {
+    image: "/assets/combatants/defensive_1_attack_3.png"
+  }
+  images {
+    image: "/assets/combatants/defensive_1_attack_4.png"
+  }
+  images {
+    image: "/assets/combatants/defensive_1_attack_5.png"
+  }
+  images {
+    image: "/assets/combatants/defensive_1_attack_6.png"
+  }
+  images {
+    image: "/assets/combatants/defensive_1_attack_7.png"
+  }
   fps: 5
 }
 extrude_borders: 2

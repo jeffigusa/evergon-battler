@@ -1,0 +1,41 @@
+local urls = require 'main.urls'
+local Player = require 'main.player.player'
+
+local gamestates = {
+	'battle', 'reward'
+}
+
+local M
+
+M = {
+	current_loaded = nil,
+	unload_current = function()
+		if M.current_loaded then msg.post(M.current_loaded, 'unload') end
+		M.current_loaded = nil
+	end,
+	load = function(gamestate)
+		M.unload_current()
+		if hash(gamestate) == hash('battle') then
+			M.current_loaded = urls.battle
+			msg.post(urls.battle, 'load')
+		elseif hash(gamestate) == hash('reward') then
+			M.current_loaded = urls.reward
+			msg.post(urls.reward, 'load')
+		elseif hash(gamestate) == hash('gameover') then
+			print('gameover')
+		end
+	end
+}
+
+function init(self)
+	-- test
+	for i, v in ipairs({'normal','normal','normal','ranged','ranged'}) do Player.recruit(v) end
+	M.load('battle')
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash('proxy_loaded') then msg.post(sender, 'enable')
+	elseif message_id == hash('battle') then M.load('battle')
+	elseif message_id == hash('reward') then M.load('reward')
+	end
+end

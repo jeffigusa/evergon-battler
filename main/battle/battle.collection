@@ -1,0 +1,14 @@
+name: "battle"
+scale_along_z: 0
+embedded_instances {
+  id: "battle"
+  data: "components {\n"
+  "  id: \"battle\"\n"
+  "  component: \"/main/battle/battle.gui\"\n"
+  "}\n"
+  "components {\n"
+  "  id: \"deployment\"\n"
+  "  component: \"/main/battle/deployment.gui\"\n"
+  "}\n"
+  ""
+}

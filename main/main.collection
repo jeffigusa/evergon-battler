@@ -1,14 +1,26 @@
 name: "main"
 scale_along_z: 0
 embedded_instances {
-  id: "battle"
-  data: "components {\n"
-  "  id: \"battle\"\n"
-  "  component: \"/main/battle/battle.gui\"\n"
+  id: "proxies"
+  data: "embedded_components {\n"
+  "  id: \"reward\"\n"
+  "  type: \"collectionproxy\"\n"
+  "  data: \"collection: \\\"/main/reward/reward.collection\\\"\\n"
+  "\"\n"
   "}\n"
-  "components {\n"
-  "  id: \"deployment\"\n"
-  "  component: \"/main/battle/deployment.gui\"\n"
+  "embedded_components {\n"
+  "  id: \"battle\"\n"
+  "  type: \"collectionproxy\"\n"
+  "  data: \"collection: \\\"/main/battle/battle.collection\\\"\\n"
+  "\"\n"
+  "}\n"
+  ""
+}
+embedded_instances {
+  id: "main"
+  data: "components {\n"
+  "  id: \"gamestate\"\n"
+  "  component: \"/main/gamestate/gamestate.script\"\n"
   "}\n"
   ""
 }

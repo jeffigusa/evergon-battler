@@ -87,12 +87,24 @@ nodes {
   id: "combatant_template"
   parent: "map"
   inherit_alpha: true
-  template: "/main/battle/combatant_template.gui"
+  template: "/main/combatant/combatant_template.gui"
 }
 nodes {
   type: TYPE_BOX
   id: "combatant_template/node"
   parent: "combatant_template"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "combatant_template/hp"
+  parent: "combatant_template/node"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "combatant_template/hp_fill"
+  parent: "combatant_template/hp"
   template_node_child: true
 }
 material: "/builtins/materials/gui.material"

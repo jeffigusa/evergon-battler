@@ -1,16 +1,16 @@
+local utils = require 'main.utils.basic_utils'
 local Combatant = require 'main.combatant.combatant'
+local Player = require 'main.player.player'
 local urls = require 'main.urls'
 local M = {}
 
 M.combat_started = false
 M.combatants = {}
 
-M.add_combatant = function(prototype, team, position)
-    local combatant = Combatant.new(prototype, team)
-    combatant.position = position
-    combatant.previous_position = position
+M.add_combatant = function(combatant, position)
+    combatant.position = position or combatant.position
+    combatant.previous_position = position or combatant.position
     table.insert(M.combatants, combatant)
-    return combatant
 end
 
 M.get_combatant = function(id)
@@ -41,10 +41,10 @@ M.update_facing = function(attacker)
     local offset = defender.position - attacker.position
     if offset.x < 0 and hash(attacker.facing) == hash('right') then
         attacker.facing = 'left'
-        msg.post(urls.battle, 'combatant_facing', {combatant=attacker})
+        msg.post(urls.battle_proxy, 'combatant_facing', {combatant=attacker})
     elseif offset.x > 0 and hash(attacker.facing) == hash('left') then
         attacker.facing = 'right'
-        msg.post(urls.battle, 'combatant_facing', {combatant=attacker})
+        msg.post(urls.battle_proxy, 'combatant_facing', {combatant=attacker})
     end
 end
 
@@ -75,13 +75,13 @@ M.attack = function(attacker)
             M.hit(attacker, defender)
         end
     end)
-    msg.post(urls.battle, 'combatant_attacked', {combatant=attacker})
+    msg.post(urls.battle_proxy, 'combatant_attacked', {combatant=attacker})
 end
 
 M.handle_attacking = function(attacker, dt)
     local defender = M.get_combatant(attacker.target)
     if not defender or defender.hp <= 0 or attacker.attack_cooldown <= 0 then
-        msg.post(urls.battle, 'combatant_attack_cancelled', {combatant=attacker})
+        msg.post(urls.battle_proxy, 'combatant_attack_cancelled', {combatant=attacker})
         attacker.state = 'acquiring_target'
         attacker.attack_cooldown = 0
     else
@@ -143,7 +143,7 @@ M.move = function(combatant, position)
     if position.x < combatant.position.x then combatant.facing = 'left' elseif position.x > combatant.position.x then combatant.facing = 'right' end
     combatant.position = position
 
-    msg.post(urls.battle, 'combatant_moved', {combatant=combatant})
+    msg.post(urls.battle_proxy, 'combatant_moved', {combatant=combatant})
 end
 
 M.advance = function(attacker, dt)
@@ -241,7 +241,7 @@ end
 M.take_dmg = function(combatant, dmg)
     combatant.hp = combatant.hp - dmg
     if combatant.hp > 0 then
-        msg.post(urls.battle, 'combatant_took_dmg', {combatant=combatant, dmg=dmg})
+        msg.post(urls.battle_proxy, 'combatant_took_dmg', {combatant=combatant, dmg=dmg})
     else
         combatant.state = 'defeated'
         M.defeat_combatant(combatant)
@@ -249,10 +249,27 @@ M.take_dmg = function(combatant, dmg)
 end
 
 M.defeat_combatant = function(combatant)
-    msg.post(urls.battle, 'combatant_defeated', {combatant=combatant})
+    msg.post(urls.battle_proxy, 'combatant_defeated', {combatant=combatant})
     for i, v in ipairs(M.combatants) do
-       if v.id == combatant.id then table.remove(M.combatants, i) return end
+        if v.id == combatant.id then table.remove(M.combatants, i) break end
     end
+    -- check for victory/defeat
+    local num_player_units = utils.occurences(M.combatants, function(v) return hash(v.team) == hash('player') end)
+    local num_enemy_units = utils.occurences(M.combatants, function(v) return hash(v.team) == hash('enemy') end)
+    
+    if num_enemy_units == 0 then M.party = M.combatants M.clean_up() msg.post(urls.gamestate, 'reward')
+    elseif num_player_units == 0 then M.clean_up() msg.post(urls.gamestate, 'gameover')
+    end
+end
+
+M.clean_up = function()
+    M.combatants = {}
+    M.combat_started = false
+    Player.day = Player.day + 1
+    for i, v in ipairs(Player.party) do
+        Combatant.reset(v)
+    end
+    utils.remove_all(Player.party, function(w) return w.hp <= 0 end)
 end
 
 

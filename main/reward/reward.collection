@@ -1,0 +1,10 @@
+name: "reward"
+scale_along_z: 0
+embedded_instances {
+  id: "reward"
+  data: "components {\n"
+  "  id: \"reward\"\n"
+  "  component: \"/main/reward/reward.gui\"\n"
+  "}\n"
+  ""
+}

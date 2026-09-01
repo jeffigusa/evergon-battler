@@ -1,0 +1,58 @@
+local utils = require 'main.utils.basic_utils'
+local gui_utils = require 'main.utils.gui_utils'
+local gui_module = require 'main.utils.gui_module'
+local mygui
+local urls = require 'main.urls'
+local Player = require 'main.player.player'
+local Combatant = require 'main.combatant.combatant'
+
+local M
+
+M = {
+	display = {},
+	init = function()
+		-- get 3 random unit types for options
+		local options = {}
+		for i, v in ipairs(utils.unique_randoms_from(Combatant.combatants, 3)) do table.insert(options, v.name) end
+
+		local option_template = gui.get_node('reward_template/node')
+		local parent = gui.get_node('rewards')
+
+		-- render the options
+		for i, v in ipairs(options) do
+			local unit_data = Combatant.get_data(v)
+			local tree = gui.clone_tree(option_template)
+			local node = tree['reward_template/node']
+			local art_node = tree['reward_template/art']
+
+			gui_utils.set_texture_with_default_placeholder(art_node, 'combatants', unit_data.idle_animation, '_placeholder')
+
+			local x = utils.get_distance_from_center(i, #options, 500)
+			gui.set_parent(node, parent)
+			gui.set_position(node, vmath.vector3(x, 0, 0))
+
+			-- create the button
+			local button = mygui.create_button(node, function()
+				Player.recruit(v)
+				M.close()
+			end)
+		end
+	end,
+	close = function()
+		msg.post(urls.gamestate, 'battle')
+	end
+}
+
+function init(self)
+	msg.post('.', 'acquire_input_focus')
+	msg.post(urls.reward_proxy, 'acquire_input_focus')
+	mygui = gui_module.new(self, {})
+	M.init()
+end
+
+function on_message(self, message_id, message, sender)
+end
+
+function on_input(self, action_id, action)
+	mygui.handle_input(action_id, action)
+end

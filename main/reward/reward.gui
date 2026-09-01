@@ -1,0 +1,59 @@
+script: "/main/reward/reward.gui_script"
+nodes {
+  position {
+    x: 960.0
+    y: 540.0
+  }
+  size {
+    x: 1920.0
+    y: 1080.0
+  }
+  color {
+    x: 0.101960786
+    y: 0.101960786
+    z: 0.101960786
+  }
+  type: TYPE_BOX
+  id: "root"
+  inherit_alpha: true
+}
+nodes {
+  size {
+    x: 1500.0
+  }
+  type: TYPE_BOX
+  id: "rewards"
+  parent: "root"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  position {
+    x: -342.0
+    y: 1489.0
+  }
+  type: TYPE_TEMPLATE
+  id: "reward_template"
+  inherit_alpha: true
+  template: "/main/reward/reward_template.gui"
+}
+nodes {
+  type: TYPE_BOX
+  id: "reward_template/node"
+  parent: "reward_template"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "reward_template/panel"
+  parent: "reward_template/node"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "reward_template/art"
+  parent: "reward_template/node"
+  template_node_child: true
+}
+material: "/builtins/materials/gui.material"
+adjust_reference: ADJUST_REFERENCE_PARENT
