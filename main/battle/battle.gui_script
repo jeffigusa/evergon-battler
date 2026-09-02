@@ -10,6 +10,7 @@ local M
 M = {
 	display = {},
 	get_display = function(id) return utils.search(M.display, function(v) return v.id == id end) end,
+	remove_display = function(id) utils.remove(M.display, id, 'id', 1) end,
 	add_combatant = function(combatant)
 		local combatant_data = Combatant.get_data(combatant.prototype)
 		local template = gui.get_node('combatant_template/node')
@@ -50,12 +51,13 @@ M = {
 		end
 	end,
 	defeat_combatant = function(combatant)
-		local node = gui.get_node(combatant.id)
-		gui.delete_node(node)
+		-- play death animation here
+		M.remove_combatant(combatant)
 	end,
 	remove_combatant = function(combatant)
-		local node = gui.get_node(combatant.id)
-		gui.delete_node(node)
+		local display = M.get_display(combatant.id)
+		gui.delete_node(display.node)
+		M.remove_display(combatant.id)
 	end,
 	cancel_combatant_attack = function(combatant)
 		local combatant_data = Combatant.get_data(combatant.prototype)
