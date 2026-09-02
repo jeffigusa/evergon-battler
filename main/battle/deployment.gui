@@ -42,6 +42,24 @@ nodes {
 }
 nodes {
   position {
+    x: -500.0
+  }
+  size {
+    x: 500.0
+    y: 700.0
+  }
+  color {
+    x: 0.0
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "deployment_zone"
+  parent: "map"
+  inherit_alpha: true
+  alpha: 0.1
+}
+nodes {
+  position {
     x: 50.0
     y: -450.0
   }

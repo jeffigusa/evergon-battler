@@ -13,6 +13,20 @@ M.add_combatant = function(combatant, position)
     table.insert(M.combatants, combatant)
 end
 
+M.remove_combatant = function(combatant)
+    for i, v in ipairs(M.combatants) do
+        if v.id == combatant.id then table.remove(M.combatants, i) break end
+    end
+end
+
+M.undo_add_combatant = function()
+    local most_recent = M.combatants[#M.combatants]
+    if most_recent and hash(most_recent.team) == hash('player') then
+        M.remove_combatant(most_recent)
+        return most_recent
+    end
+end
+
 M.get_combatant = function(id)
     for i, v in ipairs(M.combatants) do if v.id == id then return v end end
 end
@@ -258,9 +272,8 @@ end
 M.defeat_combatant = function(combatant)
     combatant.state = 'defeated'
     msg.post(urls.battle_proxy, 'combatant_defeated', {combatant=combatant})
-    for i, v in ipairs(M.combatants) do
-        if v.id == combatant.id then table.remove(M.combatants, i) break end
-    end
+
+    M.remove_combatant(combatant)
     -- check for victory/defeat
     local num_player_units = utils.occurences(M.combatants, function(v) return hash(v.team) == hash('player') end)
     local num_enemy_units = utils.occurences(M.combatants, function(v) return hash(v.team) == hash('enemy') end)

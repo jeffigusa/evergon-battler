@@ -221,8 +221,16 @@ M.handle_input = function(instance, action_id, action)
         return handle.press(instance, action_id, action)
     elseif action_id == hash('click') and action.released then
         return handle.release(instance, action_id, action)
-    elseif action.x and (action.dx~=0 or action.dy~=0) then
+    elseif not action_id and action.x and (action.dx~=0 or action.dy~=0) then
         handle.move_cursor(instance, action_id, action)
+    else
+        for i, v in ipairs(instance.mygui.keybinds or {}) do
+            if action_id == hash(v.action_id) then
+                if action.pressed and v.on_pressed then v.on_pressed()
+                elseif action.released and v.on_released then v.on_released()
+                end
+            end
+        end
     end
 end
 
@@ -233,12 +241,14 @@ M.new = function(instance, layer_hierarchy)
         focused=nil,
         layer_hierarchy=layer_hierarchy,
         interactables={},
+        keybinds = {},
         enable=function(self) self.enabled=true end,
         disable=function(self) self.enabled=false end,
         handle_input = function(action_id, action) M.handle_input(instance, action_id, action) end,
         create_button = function(node, callback) return M.create_button(instance, node, callback) end,
         create_draggable = function(node, params) return M.create_draggable(instance, node, params) end,
         create_droptarget = function(node, params) return M.create_droptarget(instance, node, params) end,
+        create_keybind = function(keybind) return M.create_keybind(instance, keybind) end
     }
 
     return instance.mygui
@@ -267,6 +277,11 @@ M.create_droptarget = function(instance, node, _params)
     droptarget.is_droptarget = true
     register(instance, droptarget)
     return droptarget
+end
+
+-- a keybind = {action_id=, on_pressed=, on_released=}
+M.create_keybind = function(instance, keybind)
+    table.insert(instance.mygui.keybinds, keybind)
 end
 
 return M

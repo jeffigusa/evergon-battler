@@ -3,10 +3,6 @@ local Combatant = require 'main.combatant.combatant'
 local M = {}
 
 M.party = {}
-M.getting_reward = {
-    type = 'no_reward',
-    options = {}
-}
 
 M.day = 1
 

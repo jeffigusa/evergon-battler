@@ -16,8 +16,10 @@ Map = {
 	display = {},
 	init = function(self)
 		local map_node = gui.get_node('map')
+		local deployment_zone_node = gui.get_node('deployment_zone')
 		local button = mygui.create_button(map_node, function(params)
 			if #Deployment.to_deploy == 0 then return end
+			if not gui.pick_node(deployment_zone_node, params.x, params.y) then return end
 			local position = vmath.vector3(params.x, params.y, 0)
 			position = position - gui_utils.get_absolute_position(map_node)
 			Deployment:place_combatant(Deployment.active_id, position)
@@ -41,6 +43,8 @@ Deployment = {
 			Battle.start_combat()
 			self:close()
 		end)
+
+		mygui.create_keybind({action_id = 'right_click', on_pressed=function() self:undo_place_combatant() end})
 	end,
 
 	update_display = function(self)
@@ -93,6 +97,14 @@ Deployment = {
 			self.active_id = nil
 		end
 		self:update_display()
+	end,
+	undo_place_combatant = function(self)
+		local combatant = Battle.undo_add_combatant()
+		if not combatant then return end
+		table.insert(self.to_deploy, 1, combatant)
+		self.active_id = combatant.id
+		self:update_display()
+		msg.post(urls.battle_proxy, 'combatant_removed', {combatant = combatant})
 	end,
 	close = function(self)
 		gui.set_enabled(gui.get_node('root'), false)

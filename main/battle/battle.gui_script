@@ -142,7 +142,7 @@ function init(self)
 	set_enemies()
 
 	-- increase timescale for testing
-	msg.post(urls.battle, 'set_time_step', {factor = 3, mode=0})
+	-- msg.post(urls.battle, 'set_time_step', {factor = 3, mode=0})
 end
 
 function update(selt, dt)
