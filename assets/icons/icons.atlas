@@ -1,0 +1,10 @@
+images {
+  image: "/assets/icons/aggressive.png"
+}
+images {
+  image: "/assets/icons/defensive.png"
+}
+images {
+  image: "/assets/icons/_placeholder.png"
+}
+extrude_borders: 2

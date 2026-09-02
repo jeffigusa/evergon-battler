@@ -1,6 +1,7 @@
 local utils = require 'main.utils.basic_utils'
+local gui_utils = require 'main.utils.gui_utils'
 local bars = require 'main.utils.bars'
-local Combatant = require 'main.combatant.combatant'
+local Unit = require 'main.unit.unit'
 local Battle = require 'main.battle.battle'
 local Player = require 'main.player.player'
 local Enemy = require 'main.enemy.enemy'
@@ -11,92 +12,96 @@ M = {
 	display = {},
 	get_display = function(id) return utils.search(M.display, function(v) return v.id == id end) end,
 	remove_display = function(id) utils.remove(M.display, id, 'id', 1) end,
-	add_combatant = function(combatant)
-		local combatant_data = Combatant.get_data(combatant.prototype)
-		local template = gui.get_node('combatant_template/node')
+	add_unit = function(unit)
+		local unit_data = Unit.get_data(unit.prototype)
+		local template = gui.get_node('unit_template/node')
 		local tree = gui.clone_tree(template)
-		local node = tree['combatant_template/node']
-		local hp_bar = tree['combatant_template/hp']
-		local hp_bar_fill = tree['combatant_template/hp_fill']
-		local bar = bars.new(hp_bar, hp_bar_fill, nil, combatant.hp, combatant.max_hp)
-		if combatant.hp == combatant.max_hp then bar.hide() end
-		table.insert(M.display, {id=combatant.id, node=node, bar=bar})
+		local node = tree['unit_template/node']
+		local hp_bar = tree['unit_template/hp']
+		local hp_bar_fill = tree['unit_template/hp_fill']
+		local bar = bars.new(hp_bar, hp_bar_fill, nil, unit.hp, unit.max_hp)
+		local stance = tree['unit_template/stance']
+		if unit.hp == unit.max_hp then bar.hide() end
+		table.insert(M.display, {id=unit.id, node=node, bar=bar, stance=stance})
 
-		gui.set_id(node, combatant.id)
-		gui.set_position(node, combatant.position)
-		if combatant.team == 'enemy' then gui.set_color(node, vmath.vector4(0.7,0.7,0.7, 1)) end
+		gui.set_id(node, unit.id)
+		gui.set_position(node, unit.position)
+		if unit.team == 'enemy' then gui.set_color(node, vmath.vector4(0.7,0.7,0.7, 1)) end
 		
-		gui.set_texture(node, 'combatants')
-		if combatant_data.idle_animation and pcall(gui.play_flipbook, node, combatant_data.idle_animation) then
-			gui.play_flipbook(node, combatant_data.idle_animation)
+		gui.set_texture(node, 'units')
+		gui_utils.set_texture_with_default_placeholder(node, 'units', unit.prototype..'_idle', '_placeholder')
+
+		if hash(unit.team) == hash('player') then
+			M.update_z()
+			-- set stance icon
+			gui.set_visible(stance, true)
+			gui_utils.set_texture_with_default_placeholder(stance, 'icons', unit.stance, '_placeholder')
 		end
-		if hash(combatant.team) == hash('player') then M.update_z() end
 	end,
-	move_combatant = function(combatant)
-		local node = gui.get_node(combatant.id)
-		gui.set_position(node, combatant.position)
+	move_unit = function(unit)
+		local node = gui.get_node(unit.id)
+		gui.set_position(node, unit.position)
 	end,
-	set_combatant_facing = function(combatant)
-		local display = M.get_display(combatant.id)
+	set_unit_facing = function(unit)
+		local display = M.get_display(unit.id)
 		local node = display.node
 		local bar = display.bar
-		if hash(combatant.facing) == hash('right') then
+		if hash(unit.facing) == hash('right') then
 			local euler = 0
 			gui.set(node, 'euler.y', euler)
 			gui.set(bar.node, 'euler.y', euler)
-		elseif hash(combatant.facing) == hash('left') then
+		elseif hash(unit.facing) == hash('left') then
 			local euler = 180
 			gui.set(node, 'euler.y', euler)
 			gui.set(bar.node, 'euler.y', euler)
 		end
 	end,
-	defeat_combatant = function(combatant)
+	defeat_unit = function(unit)
 		-- play death animation here
-		M.remove_combatant(combatant)
+		M.remove_unit(unit)
 	end,
-	remove_combatant = function(combatant)
-		local display = M.get_display(combatant.id)
+	remove_unit = function(unit)
+		local display = M.get_display(unit.id)
 		gui.delete_node(display.node)
-		M.remove_display(combatant.id)
+		M.remove_display(unit.id)
 	end,
-	cancel_combatant_attack = function(combatant)
-		local combatant_data = Combatant.get_data(combatant.prototype)
-		local node = gui.get_node(combatant.id)
+	cancel_unit_attack = function(unit)
+		local unit_data = Unit.get_data(unit.prototype)
+		local node = gui.get_node(unit.id)
 		gui.cancel_flipbook(node)
-		gui.play_flipbook(node, combatant_data.idle_animation)
+		gui_utils.set_texture_with_default_placeholder(node, 'units', unit.prototype..'_idle', '_placeholder')
 	end,
-	show_combatant_attack = function(combatant)
-		local combatant_data = Combatant.get_data(combatant.prototype)
-		local initial_target = combatant.target
-		local node = gui.get_node(combatant.id)
-		local defender = Battle.get_combatant(combatant.target)
+	show_unit_attack = function(unit)
+		local unit_data = Unit.get_data(unit.prototype)
+		local initial_target = unit.target
+		local node = gui.get_node(unit.id)
+		local defender = Battle.get_unit(unit.target)
 		if not defender or defender.hp <= 0 then return end
-		if combatant_data.attack_animation then
-			gui.play_flipbook(node, combatant_data.attack_animation, function()
-				gui.play_flipbook(node, combatant_data.idle_animation)
+		if pcall(gui.play_flipbook, node, unit.prototype..'_attack') then
+			gui.play_flipbook(node, unit.prototype..'_attack', function()
+				gui_utils.set_texture_with_default_placeholder(node, 'units', unit.prototype..'_idle', '_placeholder')
 			end)
-			if combatant_data.is_ranged then
-				local defender_node = gui.get_node(combatant.target)
+			if unit_data.is_ranged then
+				local defender_node = gui.get_node(unit.target)
 				local target_position = gui.get_position(defender_node)
-				timer.delay(combatant_data.projectile_launch_delay, false, function()
-					local attacker_now = Battle.get_combatant(combatant.id)
+				timer.delay(1/unit_data.attack_speed/2, false, function()
+					local attacker_now = Battle.get_unit(unit.id)
 					if not attacker_now or not defender
 						or attacker_now.hp <=0 or defender.hp <= 0
 						or hash(attacker_now.state) ~= hash('attacking')
 						or defender.id ~= initial_target then
 							return
 					end
-					local offset = target_position - combatant.position
+					local offset = target_position - unit.position
 					local angle = math.atan2(offset.y, offset.x)
 					local rotation = vmath.quat_rotation_z(angle)
 					if pcall(gui.get_position, defender_node) then target_position = gui.get_position(defender_node) end
 					local projectile_node = gui.new_box_node(vmath.vector3(), vmath.vector3(30))
 					gui.set_rotation(projectile_node, rotation)
-					gui.set_texture(projectile_node, 'combatants')
-					gui.play_flipbook(projectile_node, combatant_data.projectile_animation)
-					local duration = vmath.length(offset)/combatant_data.projectile_speed
+					gui_utils.set_texture_with_default_placeholder(projectile_node, 'units', unit.prototype..'_projectile', '_placeholder')
+					local duration = vmath.length(offset)/unit_data.projectile_speed
 					gui.set_parent(projectile_node, gui.get_node('map'))
-					gui.set_position(projectile_node, combatant.position)
+					gui.set_position(projectile_node, unit.position)
 					gui.animate(projectile_node, 'position', target_position, gui.EASING_LINEAR, duration, 0, function()
 						gui.delete_node(projectile_node)
 					end)
@@ -104,11 +109,11 @@ M = {
 			end
 		end
 	end,
-	take_dmg = function(combatant, dmg)
-		local display = M.get_display(combatant.id)
+	take_dmg = function(unit, dmg)
+		local display = M.get_display(unit.id)
 		local node = display.node
-		if combatant.hp ~= combatant.max_hp then display.bar.show() end
-		display.bar.set_fill(combatant.hp)
+		if unit.hp ~= unit.max_hp then display.bar.show() end
+		display.bar.set_fill(unit.hp)
 		local euler = 10
 		gui.cancel_animations(node, 'euler.z')
 		gui.set(node, 'euler.z', euler)
@@ -117,7 +122,7 @@ M = {
 	end,
 	update_z = function()
 		local nodes = {}
-		for i, v in ipairs(Battle.combatants) do
+		for i, v in ipairs(Battle.units) do
 			local node = gui.get_node(v.id)
 			local position = gui.get_position(node)
 			table.insert(nodes, {node=node, y=position.y})
@@ -126,6 +131,11 @@ M = {
 		for i = 2, #nodes do
 			gui.move_above(nodes[i].node, nodes[i-1].node)
 		end
+	end,
+	hide_stances = function()
+		for i, v in ipairs(M.display) do
+			gui.set_visible(v.stance, false)
+		end
 	end
 }
 
@@ -133,9 +143,9 @@ local set_enemies = function()
 	local enemy_party = Enemy.get_random_party(Player.day)
 	for i, v in ipairs(enemy_party) do
 		v.facing = 'left'
-		Battle.add_combatant(v)
-		M.add_combatant(v)
-		M.set_combatant_facing(v)
+		Battle.add_unit(v)
+		M.add_unit(v)
+		M.set_unit_facing(v)
 	end
 	M.update_z()
 end
@@ -153,23 +163,23 @@ function update(selt, dt)
 end
 
 function on_message(self, message_id, message, sender)
-	if message_id == hash('combatant_added') then
-		M.add_combatant(message.combatant)
-	elseif message_id == hash('combatant_removed') then
-		M.remove_combatant(message.combatant)
-	elseif message_id == hash('combatant_moved') then
-		M.move_combatant(message.combatant)
-	elseif message_id == hash('combatant_facing') then
-		M.set_combatant_facing(message.combatant)
-	elseif message_id == hash('combatant_attacked') then
-		M.show_combatant_attack(message.combatant)
-	elseif message_id == hash('combatant_attack_cancelled') then
-		M.cancel_combatant_attack(message.combatant)
-	elseif message_id == hash('combatant_defeated') then
-		M.defeat_combatant(message.combatant)
-	elseif message_id == hash('combatant_took_dmg') then
-		M.take_dmg(message.combatant, message.dmg)
-	elseif message_id == hash('start_combat') then
-		Battle.start_combat()
+	if message_id == hash('unit_added') then
+		M.add_unit(message.unit)
+	elseif message_id == hash('unit_removed') then
+		M.remove_unit(message.unit)
+	elseif message_id == hash('unit_moved') then
+		M.move_unit(message.unit)
+	elseif message_id == hash('unit_facing') then
+		M.set_unit_facing(message.unit)
+	elseif message_id == hash('unit_attacked') then
+		M.show_unit_attack(message.unit)
+	elseif message_id == hash('unit_attack_cancelled') then
+		M.cancel_unit_attack(message.unit)
+	elseif message_id == hash('unit_defeated') then
+		M.defeat_unit(message.unit)
+	elseif message_id == hash('unit_took_dmg') then
+		M.take_dmg(message.unit, message.dmg)
+	elseif message_id == hash('hide_stances') then
+		M.hide_stances()
 	end
 end

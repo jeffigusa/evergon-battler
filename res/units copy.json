@@ -1,0 +1,135 @@
+{
+    "worker": {
+        "name": "worker",
+        "description": "peasant",
+        "type": "player",
+        "is_ranged": true,
+        "difficulty": 1,
+        "hp": 20,
+        "attack": 2,
+        "attack_speed": 0.6,
+        "defense": 1,
+        "range": 200,
+        "move_speed": 150,
+        "radius": 40,
+        "projectile_speed": 400,
+        "tags": [
+            null,
+            null
+        ]
+    },
+    "normal": {
+        "name": "normal",
+        "description": "footman",
+        "type": "player",
+        "is_ranged": null,
+        "difficulty": 2,
+        "hp": 30,
+        "attack": 3,
+        "attack_speed": 1,
+        "defense": 2,
+        "range": 50,
+        "move_speed": 150,
+        "radius": 40,
+        "projectile_speed": null,
+        "tags": [
+            null,
+            null
+        ]
+    },
+    "defensive": {
+        "name": "defensive",
+        "description": "knight",
+        "type": "player",
+        "is_ranged": null,
+        "difficulty": 3,
+        "hp": 40,
+        "attack": 3,
+        "attack_speed": 0.8,
+        "defense": 2,
+        "range": 50,
+        "move_speed": 150,
+        "radius": 40,
+        "projectile_speed": null,
+        "tags": [
+            null,
+            null
+        ]
+    },
+    "spearman": {
+        "name": "spearman",
+        "description": "spearman",
+        "type": "player",
+        "is_ranged": null,
+        "difficulty": 2,
+        "hp": 30,
+        "attack": 3,
+        "attack_speed": 0.8,
+        "defense": 2,
+        "range": 100,
+        "move_speed": 150,
+        "radius": 40,
+        "projectile_speed": null,
+        "tags": [
+            null,
+            null
+        ]
+    },
+    "ranged": {
+        "name": "ranged",
+        "description": "rifleman",
+        "type": "player",
+        "is_ranged": true,
+        "difficulty": 2,
+        "hp": 15,
+        "attack": 3,
+        "attack_speed": 1,
+        "defense": 1,
+        "range": 300,
+        "move_speed": 150,
+        "radius": 40,
+        "projectile_speed": 400,
+        "tags": [
+            null,
+            null
+        ]
+    },
+    "archer": {
+        "name": "archer",
+        "description": "archer",
+        "type": "player",
+        "is_ranged": true,
+        "difficulty": 3,
+        "hp": 10,
+        "attack": 5,
+        "attack_speed": 0.8,
+        "defense": 0,
+        "range": 500,
+        "move_speed": 100,
+        "radius": 40,
+        "projectile_speed": 600,
+        "tags": [
+            null,
+            null
+        ]
+    },
+    "": {
+        "name": null,
+        "description": "mortar team",
+        "type": "player",
+        "is_ranged": true,
+        "difficulty": null,
+        "hp": null,
+        "attack": null,
+        "attack_speed": null,
+        "defense": null,
+        "range": null,
+        "move_speed": null,
+        "radius": null,
+        "projectile_speed": null,
+        "tags": [
+            null,
+            null
+        ]
+    }
+}

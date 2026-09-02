@@ -4,8 +4,12 @@ fonts {
   font: "/builtins/fonts/default.font"
 }
 textures {
-  name: "combatants"
-  texture: "/assets/combatants/combatants.atlas"
+  name: "units"
+  texture: "/assets/units/units.atlas"
+}
+textures {
+  name: "icons"
+  texture: "/assets/icons/icons.atlas"
 }
 nodes {
   position {
@@ -80,7 +84,7 @@ nodes {
     z: 0.5019608
   }
   type: TYPE_BOX
-  id: "combatant_panel"
+  id: "unit_panel"
   parent: "deployment"
   inherit_alpha: true
 }
@@ -93,7 +97,7 @@ nodes {
     y: 150.0
   }
   type: TYPE_BOX
-  id: "combatants"
+  id: "units"
   pivot: PIVOT_W
   parent: "deployment"
   inherit_alpha: true
@@ -109,8 +113,8 @@ nodes {
     y: 150.0
   }
   type: TYPE_BOX
-  id: "combatant_card_template"
-  parent: "combatants"
+  id: "unit_card_template"
+  parent: "units"
   inherit_alpha: true
   visible: false
 }
@@ -120,8 +124,8 @@ nodes {
     y: 150.0
   }
   type: TYPE_BOX
-  id: "combatant_card_template_panel"
-  parent: "combatant_card_template"
+  id: "unit_card_template_panel"
+  parent: "unit_card_template"
   inherit_alpha: true
 }
 nodes {
@@ -130,9 +134,9 @@ nodes {
     y: 100.0
   }
   type: TYPE_BOX
-  texture: "combatants/melee_1_idle"
-  id: "combatant_card_template_art"
-  parent: "combatant_card_template"
+  texture: "icons/_placeholder"
+  id: "unit_card_template_art"
+  parent: "unit_card_template"
   inherit_alpha: true
 }
 nodes {
@@ -149,8 +153,8 @@ nodes {
     z: 0.0
   }
   type: TYPE_BOX
-  id: "combatant_card_template_hp"
-  parent: "combatant_card_template"
+  id: "unit_card_template_hp"
+  parent: "unit_card_template"
   inherit_alpha: true
 }
 nodes {
@@ -166,9 +170,9 @@ nodes {
     z: 0.0
   }
   type: TYPE_BOX
-  id: "combatant_card_template_hp_fill"
+  id: "unit_card_template_hp_fill"
   pivot: PIVOT_W
-  parent: "combatant_card_template_hp"
+  parent: "unit_card_template_hp"
   inherit_alpha: true
 }
 nodes {
@@ -177,7 +181,7 @@ nodes {
     y: 52.0
   }
   type: TYPE_BOX
-  id: "active_combatant"
+  id: "active_unit"
   parent: "deployment"
   inherit_alpha: true
   visible: false
@@ -188,8 +192,8 @@ nodes {
     y: 250.0
   }
   type: TYPE_BOX
-  id: "active_combatant_panel"
-  parent: "active_combatant"
+  id: "active_unit_panel"
+  parent: "active_unit"
   inherit_alpha: true
 }
 nodes {
@@ -201,9 +205,9 @@ nodes {
     y: 150.0
   }
   type: TYPE_BOX
-  texture: "combatants/melee_1_idle"
-  id: "active_combatant_art"
-  parent: "active_combatant"
+  texture: "icons/_placeholder"
+  id: "active_unit_art"
+  parent: "active_unit"
   inherit_alpha: true
 }
 nodes {
@@ -220,8 +224,8 @@ nodes {
     z: 0.0
   }
   type: TYPE_BOX
-  id: "active_combatant_hp"
-  parent: "active_combatant"
+  id: "active_unit_hp"
+  parent: "active_unit"
   inherit_alpha: true
 }
 nodes {
@@ -237,9 +241,68 @@ nodes {
     z: 0.0
   }
   type: TYPE_BOX
-  id: "active_combatant_hp_fill"
+  id: "active_unit_hp_fill"
   pivot: PIVOT_W
-  parent: "active_combatant_hp"
+  parent: "active_unit_hp"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: -903.0
+    y: 229.0
+  }
+  type: TYPE_BOX
+  id: "stance"
+  parent: "deployment"
+  inherit_alpha: true
+  visible: false
+}
+nodes {
+  position {
+    x: 50.0
+  }
+  size {
+    x: 80.0
+    y: 80.0
+  }
+  type: TYPE_BOX
+  id: "button_aggressive"
+  parent: "stance"
+  inherit_alpha: true
+}
+nodes {
+  size {
+    x: 80.0
+    y: 80.0
+  }
+  type: TYPE_BOX
+  texture: "icons/aggressive"
+  id: "button_aggressive_icon"
+  parent: "button_aggressive"
+  inherit_alpha: true
+}
+nodes {
+  position {
+    x: -50.0
+  }
+  size {
+    x: 80.0
+    y: 80.0
+  }
+  type: TYPE_BOX
+  id: "button_defensive"
+  parent: "stance"
+  inherit_alpha: true
+}
+nodes {
+  size {
+    x: 80.0
+    y: 80.0
+  }
+  type: TYPE_BOX
+  texture: "icons/defensive"
+  id: "button_defensive_icon"
+  parent: "button_defensive"
   inherit_alpha: true
 }
 nodes {
@@ -280,27 +343,33 @@ nodes {
     y: 925.0
   }
   type: TYPE_TEMPLATE
-  id: "combatant_template"
+  id: "unit_template"
   parent: "root"
   inherit_alpha: true
-  template: "/main/combatant/combatant_template.gui"
+  template: "/main/unit/unit_template.gui"
 }
 nodes {
   type: TYPE_BOX
-  id: "combatant_template/node"
-  parent: "combatant_template"
+  id: "unit_template/node"
+  parent: "unit_template"
   template_node_child: true
 }
 nodes {
   type: TYPE_BOX
-  id: "combatant_template/hp"
-  parent: "combatant_template/node"
+  id: "unit_template/hp"
+  parent: "unit_template/node"
   template_node_child: true
 }
 nodes {
   type: TYPE_BOX
-  id: "combatant_template/hp_fill"
-  parent: "combatant_template/hp"
+  id: "unit_template/hp_fill"
+  parent: "unit_template/hp"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "unit_template/stance"
+  parent: "unit_template/node"
   template_node_child: true
 }
 material: "/builtins/materials/gui.material"

@@ -5,7 +5,7 @@ local mygui
 local gui_utils = require 'main.utils.gui_utils'
 local urls = require 'main.urls'
 
-local Combatant = require 'main.combatant.combatant'
+local Unit = require 'main.unit.unit'
 local Battle = require 'main.battle.battle'
 
 local Player = require 'main.player.player'
@@ -22,7 +22,7 @@ Map = {
 			if not gui.pick_node(deployment_zone_node, params.x, params.y) then return end
 			local position = vmath.vector3(params.x, params.y, 0)
 			position = position - gui_utils.get_absolute_position(map_node)
-			Deployment:place_combatant(Deployment.active_id, position)
+			Deployment:place_unit(Deployment.active_id, position)
 		end)
 	end,
 }
@@ -30,66 +30,87 @@ Map = {
 Deployment = {
 	to_deploy = {},
 	display = {},
+	stance = '',
 	active_display = {},
 	init = function(self)
-		local active_combatant = Player.party[1]
-		self.active_id = active_combatant.id
-		self.active_display.bar = bars.new(gui.get_node('active_combatant_hp'), gui.get_node('active_combatant_hp_fill'), nil, active_combatant.hp, active_combatant.max_hp)
+		local active_unit = Player.party[1]
+		self.active_id = active_unit.id
+		self.active_display.bar = bars.new(gui.get_node('active_unit_hp'), gui.get_node('active_unit_hp_fill'), nil, active_unit.hp, active_unit.max_hp)
 		for i, v in ipairs(Player.party) do	table.insert(self.to_deploy, v)	end
 		self:update_display()
 
+		-- setup stance buttons
+		local stance_aggressive_node = gui.get_node('button_aggressive')
+		local stance_defensive_node = gui.get_node('button_defensive')
+		local set_stance_aggressive = function()
+			if hash(self.stance) == hash('aggressive') then return end
+			self.stance = 'aggressive'
+			gui.set_color(stance_aggressive_node, vmath.vector4(0.8, 0.4, 0.4, 1))
+			gui.set_color(stance_defensive_node, vmath.vector4(1))
+		end
+		local set_stance_defensive = function()
+			if hash(self.stance) == hash('defensive') then return end
+			self.stance = 'defensive'
+			gui.set_color(stance_aggressive_node, vmath.vector4(1))
+			gui.set_color(stance_defensive_node, vmath.vector4(0.4, 0.4, 0.8, 1))
+		end
+		mygui.create_button(stance_aggressive_node, set_stance_aggressive)
+		mygui.create_button(stance_defensive_node, set_stance_defensive)
+		set_stance_aggressive()
+
+		-- setup start combat button
 		local start_button_node = gui.get_node('button_start')
 		mygui.create_button(start_button_node, function()
 			Battle.start_combat()
 			self:close()
+			msg.post(urls.battle_proxy, 'hide_stances')
 		end)
 
-		mygui.create_keybind({action_id = 'right_click', on_pressed=function() self:undo_place_combatant() end})
+		mygui.create_keybind({action_id = 'right_click', on_pressed=function() if Battle.combat_started then return end self:undo_place_unit() end})
 	end,
 
 	update_display = function(self)
 		for i, v in ipairs(self.display) do gui.delete_node(v.node) end
 		self.display = {}
 		local active_i = utils.findIndex(self.to_deploy, self.active_id, 'id', 1)
-		for i, combatant in ipairs(self.to_deploy) do
-			local combatant_data = Combatant.get_data(combatant.prototype)
-			if combatant.id == self.active_id then
+		for i, unit in ipairs(self.to_deploy) do
+			local unit_data = Unit.get_data(unit.prototype)
+			if unit.id == self.active_id then
 				-- render the active party member
-				local art = gui.get_node('active_combatant_art')
-				gui.set_texture(art, 'combatants')
-				gui_utils.set_texture_with_default_placeholder(art, 'combatants', combatant_data.idle_animation, '_placeholder')
-				self.active_display.bar.set_max(combatant.max_hp)
-				self.active_display.bar.set_fill(combatant.hp)
+				local art = gui.get_node('active_unit_art')
+				gui.set_texture(art, 'units')
+				gui_utils.set_texture_with_default_placeholder(art, 'units', unit.prototype..'_idle', '_placeholder')
+				self.active_display.bar.set_max(unit.max_hp)
+				self.active_display.bar.set_fill(unit.hp)
 			else
 				-- render the non-active party members on bar
-				local template = gui.get_node('combatant_card_template')
+				local template = gui.get_node('unit_card_template')
 				local tree = gui.clone_tree(template)
-				local node = tree.combatant_card_template
-				local art = tree.combatant_card_template_art
-				gui.set_texture(node, 'combatants')
-				if combatant_data.idle_animation then
-					gui.play_flipbook(art, combatant_data.idle_animation)
-				end
-				local bar = bars.new(tree.combatant_card_template_hp, tree.combatant_card_template_hp_fill, nil, combatant.hp, combatant.max_hp)
+				local node = tree.unit_card_template
+				local art = tree.unit_card_template_art
+				gui.set_texture(node, 'units')
+				gui_utils.set_texture_with_default_placeholder(art, 'units', unit.prototype..'_idle', '_placeholder')
+				local bar = bars.new(tree.unit_card_template_hp, tree.unit_card_template_hp_fill, nil, unit.hp, unit.max_hp)
 
-				table.insert(self.display, {node=node, id=combatant.id})
-				local i_mod = 0 if active_i and i > active_i then i_mod = -1 end -- account for active_combatant being pulled out of the bar
+				table.insert(self.display, {node=node, id=unit.id})
+				local i_mod = 0 if active_i and i > active_i then i_mod = -1 end -- account for active_unit being pulled out of the bar
 				local x = (i + i_mod) * 110
 				gui.set_position(node, vmath.vector3(x, 0, 0))
-				gui.set_parent(node, gui.get_node('combatants'))
+				gui.set_parent(node, gui.get_node('units'))
 			end
 		end
 
-		gui.set_enabled(gui.get_node('active_combatant'), #self.to_deploy > 0)
+		gui.set_enabled(gui.get_node('active_unit'), #self.to_deploy > 0)
 	end,
 
-	active_combatant = nil,
-	select_combatant = function(self, id) self.active_id = id end,
-	place_combatant = function(self, id, position)
+	active_unit = nil,
+	select_unit = function(self, id) self.active_id = id end,
+	place_unit = function(self, id, position)
 		local party_member = utils.search(self.to_deploy, function(v) return v.id == id end)
 		party_member.position = position
-		Battle.add_combatant(party_member)
-		msg.post(urls.battle_proxy, 'combatant_added', {combatant = party_member})
+		party_member.stance = self.stance
+		Battle.add_unit(party_member)
+		msg.post(urls.battle_proxy, 'unit_added', {unit = party_member})
 		table.remove(self.to_deploy, 1)
 		if #self.to_deploy > 0 then
 			self.active_id = self.to_deploy[1].id
@@ -98,13 +119,13 @@ Deployment = {
 		end
 		self:update_display()
 	end,
-	undo_place_combatant = function(self)
-		local combatant = Battle.undo_add_combatant()
-		if not combatant then return end
-		table.insert(self.to_deploy, 1, combatant)
-		self.active_id = combatant.id
+	undo_place_unit = function(self)
+		local unit = Battle.undo_add_unit()
+		if not unit then return end
+		table.insert(self.to_deploy, 1, unit)
+		self.active_id = unit.id
 		self:update_display()
-		msg.post(urls.battle_proxy, 'combatant_removed', {combatant = combatant})
+		msg.post(urls.battle_proxy, 'unit_removed', {unit = unit})
 	end,
 	close = function(self)
 		gui.set_enabled(gui.get_node('root'), false)

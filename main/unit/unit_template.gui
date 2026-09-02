@@ -1,6 +1,10 @@
 textures {
-  name: "combatants"
-  texture: "/assets/combatants/combatants.atlas"
+  name: "units"
+  texture: "/assets/units/units.atlas"
+}
+textures {
+  name: "icons"
+  texture: "/assets/icons/icons.atlas"
 }
 nodes {
   size {
@@ -46,6 +50,22 @@ nodes {
   pivot: PIVOT_W
   parent: "hp"
   inherit_alpha: true
+}
+nodes {
+  position {
+    x: 21.0
+    y: -21.0
+  }
+  size {
+    x: 20.0
+    y: 20.0
+  }
+  type: TYPE_BOX
+  texture: "icons/aggressive"
+  id: "stance"
+  parent: "node"
+  inherit_alpha: true
+  visible: false
 }
 material: "/builtins/materials/gui.material"
 adjust_reference: ADJUST_REFERENCE_PARENT

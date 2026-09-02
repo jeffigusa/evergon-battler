@@ -1,0 +1,78 @@
+{
+    "worker": {
+        "name": "worker",
+        "description": "peasant",
+        "type": "player",
+        "is_ranged": true,
+        "difficulty": 1,
+        "hp": 20,
+        "attack": 2,
+        "attack_speed": 0.6,
+        "defense": 1,
+        "range": 200,
+        "move_speed": 150,
+        "radius": 40,
+        "projectile_speed": 400,
+        "tags": [
+            null,
+            null
+        ]
+    },
+    "normal": {
+        "name": "normal",
+        "description": "footman",
+        "type": "player",
+        "is_ranged": null,
+        "difficulty": 2,
+        "hp": 30,
+        "attack": 3,
+        "attack_speed": 1,
+        "defense": 2,
+        "range": 50,
+        "move_speed": 150,
+        "radius": 40,
+        "projectile_speed": null,
+        "tags": [
+            null,
+            null
+        ]
+    },
+    "defensive": {
+        "name": "defensive",
+        "description": "knight",
+        "type": "player",
+        "is_ranged": null,
+        "difficulty": 3,
+        "hp": 40,
+        "attack": 3,
+        "attack_speed": 0.8,
+        "defense": 2,
+        "range": 50,
+        "move_speed": 150,
+        "radius": 40,
+        "projectile_speed": null,
+        "tags": [
+            null,
+            null
+        ]
+    },
+    "ranged": {
+        "name": "ranged",
+        "description": "rifleman",
+        "type": "player",
+        "is_ranged": true,
+        "difficulty": 2,
+        "hp": 15,
+        "attack": 3,
+        "attack_speed": 1,
+        "defense": 1,
+        "range": 300,
+        "move_speed": 150,
+        "radius": 40,
+        "projectile_speed": 400,
+        "tags": [
+            null,
+            null
+        ]
+    }
+}

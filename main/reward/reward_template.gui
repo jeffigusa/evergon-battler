@@ -3,8 +3,8 @@ fonts {
   font: "/builtins/fonts/default.font"
 }
 textures {
-  name: "combatants"
-  texture: "/assets/combatants/combatants.atlas"
+  name: "units"
+  texture: "/assets/units/units.atlas"
 }
 nodes {
   size {
@@ -32,7 +32,7 @@ nodes {
     y: 250.0
   }
   type: TYPE_BOX
-  texture: "combatants/_placeholder"
+  texture: "units/_placeholder"
   id: "art"
   parent: "node"
   inherit_alpha: true

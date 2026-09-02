@@ -1,72 +1,97 @@
 local utils = require 'main.utils.basic_utils'
-local Combatant = require 'main.combatant.combatant'
+local Unit = require 'main.unit.unit'
 local Player = require 'main.player.player'
 local urls = require 'main.urls'
 local M = {}
 
 M.combat_started = false
-M.combatants = {}
+M.units = {}
 
-M.add_combatant = function(combatant, position)
-    combatant.position = position or combatant.position
-    combatant.previous_position = position or combatant.position
-    table.insert(M.combatants, combatant)
+M.add_unit = function(unit, position)
+    unit.position = position or unit.position
+    unit.previous_position = position or unit.position
+    table.insert(M.units, unit)
 end
 
-M.remove_combatant = function(combatant)
-    for i, v in ipairs(M.combatants) do
-        if v.id == combatant.id then table.remove(M.combatants, i) break end
+M.remove_unit = function(unit)
+    for i, v in ipairs(M.units) do
+        if v.id == unit.id then table.remove(M.units, i) break end
     end
 end
 
-M.undo_add_combatant = function()
-    local most_recent = M.combatants[#M.combatants]
+M.undo_add_unit = function()
+    local most_recent = M.units[#M.units]
     if most_recent and hash(most_recent.team) == hash('player') then
-        M.remove_combatant(most_recent)
+        M.remove_unit(most_recent)
         return most_recent
     end
 end
 
-M.get_combatant = function(id)
-    for i, v in ipairs(M.combatants) do if v.id == id then return v end end
+M.get_unit = function(id)
+    for i, v in ipairs(M.units) do if v.id == id then return v end end
 end
 
-M.get_target = function(combatant)
+M.get_nearby = function(unit, radius, conditional)
+    local r = {}
+    local radius_sq = radius ^ 2
+    for i, v in ipairs(M.units) do
+        if v.id ~= unit.id then
+            local distance_sq = vmath.length_sqr(v.position - unit.position)
+            if distance_sq < radius_sq and (not conditional or conditional(v)) then
+                table.insert(r, v)
+            end
+        end
+    end
+    return r
+end
+
+M.get_target = function(unit)
+    local acquisition_range = 9999
+    local unit_data = Unit.get_data(unit.prototype)
+    -- handle defensive stance
+    if unit.stance and hash(unit.stance) == hash('defensive') then
+        if #M.get_nearby(unit, 200, function(v) return hash(v.state) == hash('attacking') end) == 0 then
+            acquisition_range = math.max(200, unit_data.range)
+        else
+            unit.stance = 'aggressive'
+        end
+    end
     local closest, closest_distance
-    local set_closest = function(v, distance) closest = v closest_distance = distance end
-    for i, v in ipairs(M.combatants) do
-        local is_valid = v.id ~= combatant.id and v.team ~= combatant.team
+    local set_closest = function(v, distance) if distance > acquisition_range then return end closest = v closest_distance = distance end
+    for i, v in ipairs(M.units) do
+        local is_valid = v.id ~= unit.id and v.team ~= unit.team
         if is_valid then
-            local distance = v.position - combatant.position
+            local distance = vmath.length(v.position - unit.position)
             if not closest then set_closest(v, distance)
-            elseif vmath.length_sqr(distance) < vmath.length_sqr(closest_distance) then
+            elseif distance < closest_distance then
                 set_closest(v, distance)
             end
         end
     end
     if not closest then return end
-    combatant.target = closest.id
-    M.update_facing(combatant)
+    if unit.stance and hash(unit.stance) == hash('defensive') then unit.stance = 'aggressive' end
+    unit.target = closest.id
+    M.update_facing(unit)
 end
 
 M.update_facing = function(attacker)
-    local defender = M.get_combatant(attacker.target)
+    local defender = M.get_unit(attacker.target)
     if not defender then return end
     local offset = defender.position - attacker.position
     if offset.x < 0 and hash(attacker.facing) == hash('right') then
         attacker.facing = 'left'
-        msg.post(urls.battle_proxy, 'combatant_facing', {combatant=attacker})
+        msg.post(urls.battle_proxy, 'unit_facing', {unit=attacker})
     elseif offset.x > 0 and hash(attacker.facing) == hash('left') then
         attacker.facing = 'right'
-        msg.post(urls.battle_proxy, 'combatant_facing', {combatant=attacker})
+        msg.post(urls.battle_proxy, 'unit_facing', {unit=attacker})
     end
 end
 
 M.acquire_target = function(attacker)
     assert(attacker.target, attacker.prototype..' '..attacker.id..' does not have a target to acquire')
-    local defender = M.get_combatant(attacker.target)
+    local defender = M.get_unit(attacker.target)
     if not defender then attacker.state = 'idle' return end
-    local attacker_data = Combatant.get_data(attacker.prototype)
+    local attacker_data = Unit.get_data(attacker.prototype)
     local offset = defender.position - attacker.position
     local distance_between = vmath.length(offset)
     if distance_between <= attacker_data.range then
@@ -79,10 +104,10 @@ end
 M.attack = function(attacker)
     M.update_facing(attacker)
     attacker.state = 'attacking'
-    local attacker_data = Combatant.get_data(attacker.prototype)
+    local attacker_data = Unit.get_data(attacker.prototype)
     local attack_time = 1/attacker_data.attack_speed
     attacker.attack_cooldown = attack_time
-    local defender = M.get_combatant(attacker.target)
+    local defender = M.get_unit(attacker.target)
     timer.delay(attack_time/2, false, function()
         if not attacker or not defender then return end
         if attacker.hp > 0 and defender.hp > 0 then
@@ -95,13 +120,13 @@ M.attack = function(attacker)
             end
         end
     end)
-    msg.post(urls.battle_proxy, 'combatant_attacked', {combatant=attacker})
+    msg.post(urls.battle_proxy, 'unit_attacked', {unit=attacker})
 end
 
 M.handle_attacking = function(attacker, dt)
-    local defender = M.get_combatant(attacker.target)
+    local defender = M.get_unit(attacker.target)
     if not defender or defender.hp <= 0 or attacker.attack_cooldown <= 0 then
-        msg.post(urls.battle_proxy, 'combatant_attack_cancelled', {combatant=attacker})
+        msg.post(urls.battle_proxy, 'unit_attack_cancelled', {unit=attacker})
         attacker.state = 'acquiring_target'
         attacker.attack_cooldown = 0
     else
@@ -118,9 +143,9 @@ local escape_search_angle = math.pi * 0.5
 
 M.get_avoidance = function(attacker)
     local avoidance = vmath.vector3()
-    local defender = M.get_combatant(attacker.target)
+    local defender = M.get_unit(attacker.target)
     local offset = defender.position - attacker.position
-    for i, v in ipairs(M.combatants) do
+    for i, v in ipairs(M.units) do
         if v.id ~= defender.id and v.id ~= attacker.id
         then
             local offset_avoidance = attacker.position - v.position
@@ -128,7 +153,7 @@ M.get_avoidance = function(attacker)
             if distance == 0 then offset_avoidance = vmath.vector3(math.random(), math.random(), 0) end
             if distance < avoidance_radius then
                 local avoidance_strength = 1 - distance / avoidance_radius
-                local combatant_data = Combatant.get_data(v.prototype) if distance < combatant_data.radius then avoidance_strength = avoidance_strength * 10 end
+                local unit_data = Unit.get_data(v.prototype) if distance < unit_data.radius then avoidance_strength = avoidance_strength * 10 end
                 avoidance = avoidance + vmath.normalize(offset_avoidance) * avoidance_strength
             end
         end
@@ -138,10 +163,10 @@ end
 
 M.get_escape_direction = function(attacker)
     local escape_scalar = 0
-    local defender = M.get_combatant(attacker.target)
+    local defender = M.get_unit(attacker.target)
     local offset = defender.position - attacker.position
 
-    for i, v in ipairs(M.combatants) do
+    for i, v in ipairs(M.units) do
         if v.id ~= defender.id and v.id ~= attacker.id and hash(v.team) == hash(attacker.team) then
             local offset_escape = v.position - attacker.position
             local offset_escape_length = vmath.length(offset_escape)
@@ -159,16 +184,16 @@ M.get_escape_direction = function(attacker)
     if escape_scalar > 0 then return 'right' else return 'left' end
 end
 
-M.move = function(combatant, position)
-    if position.x < combatant.position.x then combatant.facing = 'left' elseif position.x > combatant.position.x then combatant.facing = 'right' end
-    combatant.position = position
+M.move = function(unit, position)
+    if position.x < unit.position.x then unit.facing = 'left' elseif position.x > unit.position.x then unit.facing = 'right' end
+    unit.position = position
 
-    msg.post(urls.battle_proxy, 'combatant_moved', {combatant=combatant})
+    msg.post(urls.battle_proxy, 'unit_moved', {unit=unit})
 end
 
 M.advance = function(attacker, dt)
-    local attacker_data = Combatant.get_data(attacker.prototype)
-    local defender = M.get_combatant(attacker.target)
+    local attacker_data = Unit.get_data(attacker.prototype)
+    local defender = M.get_unit(attacker.target)
     if not defender then attacker.state = 'idle' return end
     local offset = defender.position - attacker.position
     local distance_to_defender = vmath.length(defender.position - attacker.position)
@@ -241,7 +266,7 @@ end
 
 M.tick_combat = function(dt)
     if not M.combat_started then return end
-    for i, v in ipairs(M.combatants) do
+    for i, v in ipairs(M.units) do
         if hash(v.state) == hash('idle') then M.get_target(v) if v.target then v.state = 'acquiring_target' end
         elseif hash(v.state) == hash('acquiring_target') then M.acquire_target(v)
         elseif hash(v.state) == hash('advancing') then M.advance(v, dt)
@@ -252,43 +277,45 @@ M.tick_combat = function(dt)
 end
 
 M.hit = function(attacker, defender)
-    local attacker_data, defender_data = Combatant.get_data(attacker.prototype), Combatant.get_data(defender.prototype)
+    -- if defender is not aggro-ed, then aggro the attacker
+    if not defender.target and hash(defender.state) == hash('idle') then defender.target = attacker.id M.update_facing(attacker) end
+    local attacker_data, defender_data = Unit.get_data(attacker.prototype), Unit.get_data(defender.prototype)
     local dmg = attacker_data.attack - defender_data.defense
     dmg = math.max(1, dmg)
     M.take_dmg(defender, dmg)
 end
 
-M.take_dmg = function(combatant, dmg)
-    combatant.hp = combatant.hp - dmg
-    if combatant.hp > 0 then
-        msg.post(urls.battle_proxy, 'combatant_took_dmg', {combatant=combatant, dmg=dmg})
+M.take_dmg = function(unit, dmg)
+    unit.hp = unit.hp - dmg
+    if unit.hp > 0 then
+        msg.post(urls.battle_proxy, 'unit_took_dmg', {unit=unit, dmg=dmg})
     else
-        if hash(combatant.state) ~= hash('defeated') then
-            M.defeat_combatant(combatant)
+        if hash(unit.state) ~= hash('defeated') then
+            M.defeat_unit(unit)
         end
     end
 end
 
-M.defeat_combatant = function(combatant)
-    combatant.state = 'defeated'
-    msg.post(urls.battle_proxy, 'combatant_defeated', {combatant=combatant})
+M.defeat_unit = function(unit)
+    unit.state = 'defeated'
+    msg.post(urls.battle_proxy, 'unit_defeated', {unit=unit})
 
-    M.remove_combatant(combatant)
+    M.remove_unit(unit)
     -- check for victory/defeat
-    local num_player_units = utils.occurences(M.combatants, function(v) return hash(v.team) == hash('player') end)
-    local num_enemy_units = utils.occurences(M.combatants, function(v) return hash(v.team) == hash('enemy') end)
+    local num_player_units = utils.occurences(M.units, function(v) return hash(v.team) == hash('player') end)
+    local num_enemy_units = utils.occurences(M.units, function(v) return hash(v.team) == hash('enemy') end)
     
-    if num_enemy_units == 0 then M.party = M.combatants M.clean_up() msg.post(urls.gamestate, 'reward')
+    if num_enemy_units == 0 then M.party = M.units M.clean_up() msg.post(urls.gamestate, 'reward')
     elseif num_player_units == 0 then M.clean_up() msg.post(urls.gamestate, 'gameover')
     end
 end
 
 M.clean_up = function()
-    M.combatants = {}
+    M.units = {}
     M.combat_started = false
     Player.day = Player.day + 1
     for i, v in ipairs(Player.party) do
-        Combatant.reset(v)
+        Unit.reset(v)
     end
     utils.remove_all(Player.party, function(w) return w.hp <= 0 end)
 end

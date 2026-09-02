@@ -4,8 +4,8 @@ fonts {
   font: "/builtins/fonts/default.font"
 }
 textures {
-  name: "combatants"
-  texture: "/assets/combatants/combatants.atlas"
+  name: "units"
+  texture: "/assets/units/units.atlas"
 }
 nodes {
   position {
@@ -84,27 +84,33 @@ nodes {
     y: 772.0
   }
   type: TYPE_TEMPLATE
-  id: "combatant_template"
+  id: "unit_template"
   parent: "map"
   inherit_alpha: true
-  template: "/main/combatant/combatant_template.gui"
+  template: "/main/unit/unit_template.gui"
 }
 nodes {
   type: TYPE_BOX
-  id: "combatant_template/node"
-  parent: "combatant_template"
+  id: "unit_template/node"
+  parent: "unit_template"
   template_node_child: true
 }
 nodes {
   type: TYPE_BOX
-  id: "combatant_template/hp"
-  parent: "combatant_template/node"
+  id: "unit_template/hp"
+  parent: "unit_template/node"
   template_node_child: true
 }
 nodes {
   type: TYPE_BOX
-  id: "combatant_template/hp_fill"
-  parent: "combatant_template/hp"
+  id: "unit_template/hp_fill"
+  parent: "unit_template/hp"
+  template_node_child: true
+}
+nodes {
+  type: TYPE_BOX
+  id: "unit_template/stance"
+  parent: "unit_template/node"
   template_node_child: true
 }
 material: "/builtins/materials/gui.material"
