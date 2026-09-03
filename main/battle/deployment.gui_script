@@ -19,9 +19,22 @@ Map = {
 		local deployment_zone_node = gui.get_node('deployment_zone')
 		local button = mygui.create_button(map_node, function(params)
 			if #Deployment.to_deploy == 0 then return end
+			local unit = utils.search(Player.party, function(v) return v.id == Deployment.active_id end) assert(unit)
+			local unit_data = Unit.get_data(unit.prototype)
+
+			-- restrict placement to deployment_zone
 			if not gui.pick_node(deployment_zone_node, params.x, params.y) then return end
+
+			-- enforce unit collision radius
 			local position = vmath.vector3(params.x, params.y, 0)
 			position = position - gui_utils.get_absolute_position(map_node)
+			local closest_unit, closest_distance_sq = Battle.get_closest_unit(position)
+			pprint(closest_unit, closest_distance_sq)
+			if closest_unit then
+				local closest_unit_data = Unit.get_data(closest_unit.prototype)
+				if closest_distance_sq < (closest_unit_data.radius + unit_data.radius)^2 then return end
+			end
+			
 			Deployment:place_unit(Deployment.active_id, position)
 		end)
 	end,

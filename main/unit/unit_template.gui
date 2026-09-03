@@ -20,8 +20,8 @@ nodes {
     y: 30.0
   }
   size {
-    x: 60.0
-    y: 10.0
+    x: 40.0
+    y: 5.0
   }
   color {
     x: 0.5019608
@@ -35,11 +35,11 @@ nodes {
 }
 nodes {
   position {
-    x: -30.0
+    x: -20.0
   }
   size {
-    x: 60.0
-    y: 10.0
+    x: 40.0
+    y: 5.0
   }
   color {
     y: 0.0

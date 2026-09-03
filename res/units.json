@@ -11,7 +11,7 @@
         "defense": 1,
         "range": 200,
         "move_speed": 150,
-        "radius": 40,
+        "radius": 20,
         "projectile_speed": 400,
         "tags": [
             null,
@@ -30,7 +30,7 @@
         "defense": 2,
         "range": 50,
         "move_speed": 150,
-        "radius": 40,
+        "radius": 20,
         "projectile_speed": null,
         "tags": [
             null,
@@ -49,7 +49,7 @@
         "defense": 2,
         "range": 50,
         "move_speed": 150,
-        "radius": 40,
+        "radius": 20,
         "projectile_speed": null,
         "tags": [
             null,
@@ -68,7 +68,7 @@
         "defense": 1,
         "range": 300,
         "move_speed": 150,
-        "radius": 40,
+        "radius": 20,
         "projectile_speed": 400,
         "tags": [
             null,

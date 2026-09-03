@@ -31,6 +31,20 @@ M.get_unit = function(id)
     for i, v in ipairs(M.units) do if v.id == id then return v end end
 end
 
+M.get_closest_unit = function(position)
+    local r, closest_distance_sq = nil, nil
+    for i, v in ipairs(M.units) do
+        if not r or r.id ~= v.id then
+            local distance_sq = vmath.length_sqr(v.position - position)
+            if not closest_distance_sq or distance_sq < closest_distance_sq then
+                r = v
+                closest_distance_sq = distance_sq
+            end
+        end
+    end
+    return r, closest_distance_sq
+end
+
 M.get_nearby = function(unit, radius, conditional)
     local r = {}
     local radius_sq = radius ^ 2
@@ -260,22 +274,6 @@ M.advance = function(attacker, dt)
     M.move(attacker, desired_position)
 end
 
-M.start_combat = function()
-    M.combat_started = true
-end
-
-M.tick_combat = function(dt)
-    if not M.combat_started then return end
-    for i, v in ipairs(M.units) do
-        if hash(v.state) == hash('idle') then M.get_target(v) if v.target then v.state = 'acquiring_target' end
-        elseif hash(v.state) == hash('acquiring_target') then M.acquire_target(v)
-        elseif hash(v.state) == hash('advancing') then M.advance(v, dt)
-        elseif hash(v.state) == hash('attacking') then M.handle_attacking(v, dt)
-        elseif hash(v.state) == hash('starting_attack') then M.attack(v)
-        end
-    end
-end
-
 M.hit = function(attacker, defender)
     -- if defender is not aggro-ed, then aggro the attacker
     if not defender.target and hash(defender.state) == hash('idle') then defender.target = attacker.id M.update_facing(attacker) end
@@ -304,9 +302,42 @@ M.defeat_unit = function(unit)
     -- check for victory/defeat
     local num_player_units = utils.occurences(M.units, function(v) return hash(v.team) == hash('player') end)
     local num_enemy_units = utils.occurences(M.units, function(v) return hash(v.team) == hash('enemy') end)
-    
-    if num_enemy_units == 0 then M.party = M.units M.clean_up() msg.post(urls.gamestate, 'reward')
-    elseif num_player_units == 0 then M.clean_up() msg.post(urls.gamestate, 'gameover')
+
+    if num_enemy_units == 0 then M.end_combat('victory')
+    elseif num_player_units == 0 then M.end_combat('defeat')
+    end
+end
+
+M.start_combat = function()
+    M.combat_started = true
+end
+
+M.tick_combat = function(dt)
+    if not M.combat_started then return end
+    for i, v in ipairs(M.units) do
+        if hash(v.state) == hash('idle') then M.get_target(v) if v.target then v.state = 'acquiring_target' end
+        elseif hash(v.state) == hash('acquiring_target') then M.acquire_target(v)
+        elseif hash(v.state) == hash('advancing') then M.advance(v, dt)
+        elseif hash(v.state) == hash('attacking') then M.handle_attacking(v, dt)
+        elseif hash(v.state) == hash('starting_attack') then M.attack(v)
+        end
+    end
+end
+
+-- outcome = 'victory' or 'defeat'
+M.end_combat = function(outcome)
+    M.clean_up()
+
+    -- heal the party
+    local heal_percentage = 0.1
+    for i, v in ipairs(Player.party) do
+        v.hp = math.min(v.hp + math.ceil(v.max_hp * heal_percentage), v.max_hp)
+    end
+
+    if hash(outcome) == hash('victory') then
+        msg.post(urls.gamestate, 'reward')
+    elseif hash(outcome) == hash('defeat') then
+        msg.post(urls.gamestate, 'gameover')
     end
 end
 
