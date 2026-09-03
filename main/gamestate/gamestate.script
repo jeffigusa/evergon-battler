@@ -29,7 +29,7 @@ M = {
 
 function init(self)
 	-- test
-	for i, v in ipairs({'normal','normal','worker','ranged','ranged'}) do Player.recruit(v) end
+	for i, v in ipairs({'normal','normal','normal','worker','ranged','ranged'}) do Player.recruit(v) end
 	M.load('battle')
 end
 

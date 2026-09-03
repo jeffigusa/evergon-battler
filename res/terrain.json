@@ -1,1 +1,14 @@
-{"rock":{"name":"rock","size_x":100,"size_y":100,"hitbox_x":90,"hitbox_y":76,"hitbox_offset_x":null,"hitbox_offset_y":null,"variance_x":null,"variance_y":null,"blocks_movement":true}}
+{
+    "rock": {
+        "name": "rock",
+        "size_x": 100,
+        "size_y": 100,
+        "hitbox_x": 90,
+        "hitbox_y": 76,
+        "hitbox_offset_x": null,
+        "hitbox_offset_y": null,
+        "variance_x": null,
+        "variance_y": null,
+        "blocks_movement": true
+    }
+}

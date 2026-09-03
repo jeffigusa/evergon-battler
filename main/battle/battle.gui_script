@@ -5,6 +5,7 @@ local Unit = require 'main.unit.unit'
 local Battle = require 'main.battle.battle'
 local Player = require 'main.player.player'
 local Enemy = require 'main.enemy.enemy'
+local Terrain = require 'main.battle.terrain'
 local urls = require 'main.urls'
 
 local M
@@ -22,6 +23,9 @@ M = {
 		local bar = bars.new(hp_bar, hp_bar_fill, nil, unit.hp, unit.max_hp)
 		local stance = tree['unit_template/stance']
 		if unit.hp == unit.max_hp then bar.hide() end
+		if Unit.has_status('wounded', unit) then
+			gui.set_color(hp_bar_fill, vmath.vector4(0.8, 0, 0.8, 1))
+		end
 		table.insert(M.display, {id=unit.id, node=node, bar=bar, stance=stance})
 
 		gui.set_id(node, unit.id)
@@ -122,8 +126,8 @@ M = {
 	end,
 	update_z = function()
 		local nodes = {}
-		for i, v in ipairs(Battle.units) do
-			local node = gui.get_node(v.id)
+		for i, v in ipairs(M.display) do
+			local node = v.node
 			local position = gui.get_position(node)
 			table.insert(nodes, {node=node, y=position.y})
 		end
@@ -134,8 +138,15 @@ M = {
 	end,
 	hide_stances = function()
 		for i, v in ipairs(M.display) do
-			gui.set_visible(v.stance, false)
+			if v.stance then gui.set_visible(v.stance, false) end
 		end
+	end,
+	add_terrain = function(terrain)
+		local node = gui.new_box_node(vmath.vector3(terrain.x, terrain.y, 0), vmath.vector3(terrain.w, terrain.h, 0))
+		gui.set_parent(node, gui.get_node('map'))
+		local display = {node=node, id=terrain.id}
+		gui_utils.set_texture_with_default_placeholder(node, 'terrain', terrain.prototype, '_placeholder')
+		table.insert(M.display, display)
 	end
 }
 
@@ -143,15 +154,29 @@ local set_enemies = function()
 	local enemy_party = Enemy.get_random_party(Player.day)
 	for i, v in ipairs(enemy_party) do
 		v.facing = 'left'
+		v.stance = 'aggressive'
 		Battle.add_unit(v)
 		M.add_unit(v)
 		M.set_unit_facing(v)
 	end
-	M.update_z()
+end
+
+local set_terrains = function()
+	local terrains = Terrain.get_random_terrains()
+	for i, terrain in ipairs(terrains) do
+		Battle.add_terrain(terrain)
+		M.add_terrain(terrain)
+	end
 end
 
 function init(self)
+	math.randomseed(os.time())
+
 	set_enemies()
+	set_terrains()
+
+	M.update_z()
+
 
 	-- increase timescale for testing
 	-- msg.post(urls.battle, 'set_time_step', {factor = 3, mode=0})
@@ -181,5 +206,8 @@ function on_message(self, message_id, message, sender)
 		M.take_dmg(message.unit, message.dmg)
 	elseif message_id == hash('hide_stances') then
 		M.hide_stances()
+
+	elseif message_id == hash('terrain_added') then
+		M.add_terrain(message.terrain)
 	end
 end

@@ -1,4 +1,7 @@
 images {
   image: "/assets/terrain/rock.png"
 }
+images {
+  image: "/assets/terrain/_placeholder.png"
+}
 extrude_borders: 2

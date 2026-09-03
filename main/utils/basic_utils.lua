@@ -281,5 +281,19 @@ function M.do_sequentially(functions)
 	return stack
 end
 
+function M.point_in_box(point, box)
+	return point.x <= box.x + box.w/2
+		and point.x >= box.x - box.w/2
+		and point.y <= box.y + box.h/2
+		and point.y >= box.y - box.h/2
+end
+
+-- boxes a,b with position x,y and dimensions h,w
+function M.boxes_overlap(a, b)
+	return math.abs(a.x - b.x) < (a.w + b.w)/2
+		and math.abs(a.y - b.y) < (a.h + b.h)/2
+end
+
+
 
 return M

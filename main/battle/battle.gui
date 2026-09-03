@@ -7,6 +7,10 @@ textures {
   name: "units"
   texture: "/assets/units/units.atlas"
 }
+textures {
+  name: "terrain"
+  texture: "/assets/terrain/terrain.atlas"
+}
 nodes {
   position {
     x: 960.0

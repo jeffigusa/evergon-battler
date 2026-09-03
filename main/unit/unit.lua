@@ -10,21 +10,20 @@ M.new = function(prototype, team)
         max_hp = prototype_data.hp,
         statuses = {},
         team = team,
-        stance = 'aggressive'
     }
-    M.reset(unit)
     return unit
 end
 
-M.reset = function(unit)
-    unit.target = nil
-    unit.position = nil
-    unit.momentum = vmath.vector3()
-    unit.advance_attempts = 0
-    unit.facing = 'right'
-    unit.previous_position = nil
-    unit.state = 'idle'
-    unit.stance = nil
+M.has_status = function(status_name, unit) for i, v in ipairs(unit.statuses) do if hash(v.name) == hash(status_name) then return true end end end
+M.apply_status = function(status_name, unit, duration)
+    local status = {
+        name = status_name,
+        duration = duration
+    }
+    table.insert(unit.statuses, status)
+end
+M.remove_status = function(status_name, unit)
+    utils.remove_all(unit.statuses, function(v) return hash(v.name) == hash(status_name) end)
 end
 
 M.get_data = function(prototype)

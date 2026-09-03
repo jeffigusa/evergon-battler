@@ -7,6 +7,7 @@ local urls = require 'main.urls'
 
 local Unit = require 'main.unit.unit'
 local Battle = require 'main.battle.battle'
+local Terrain = require 'main.battle.terrain'
 
 local Player = require 'main.player.player'
 
@@ -29,12 +30,15 @@ Map = {
 			local position = vmath.vector3(params.x, params.y, 0)
 			position = position - gui_utils.get_absolute_position(map_node)
 			local closest_unit, closest_distance_sq = Battle.get_closest_unit(position)
-			pprint(closest_unit, closest_distance_sq)
 			if closest_unit then
 				local closest_unit_data = Unit.get_data(closest_unit.prototype)
 				if closest_distance_sq < (closest_unit_data.radius + unit_data.radius)^2 then return end
 			end
-			
+
+			-- enforce terrain collision
+			local closest_terrain, closest_terrain_sq = Battle.get_closest_terrain(position)
+			if closest_terrain and utils.point_in_box(position, closest_terrain) then return end
+
 			Deployment:place_unit(Deployment.active_id, position)
 		end)
 	end,
@@ -95,6 +99,11 @@ Deployment = {
 				gui_utils.set_texture_with_default_placeholder(art, 'units', unit.prototype..'_idle', '_placeholder')
 				self.active_display.bar.set_max(unit.max_hp)
 				self.active_display.bar.set_fill(unit.hp)
+				if Unit.has_status('wounded', unit) then
+					gui.set_color(self.active_display.bar.fill_node, vmath.vector4(0.8, 0, 0.8, 1))
+				else
+					gui.set_color(self.active_display.bar.fill_node, vmath.vector4(1, 0, 0, 1))
+				end
 			else
 				-- render the non-active party members on bar
 				local template = gui.get_node('unit_card_template')
@@ -104,6 +113,9 @@ Deployment = {
 				gui.set_texture(node, 'units')
 				gui_utils.set_texture_with_default_placeholder(art, 'units', unit.prototype..'_idle', '_placeholder')
 				local bar = bars.new(tree.unit_card_template_hp, tree.unit_card_template_hp_fill, nil, unit.hp, unit.max_hp)
+				if Unit.has_status('wounded', unit) then
+					gui.set_color(tree.unit_card_template_hp_fill, vmath.vector4(0.8, 0, 0.8, 1))
+				end
 
 				table.insert(self.display, {node=node, id=unit.id})
 				local i_mod = 0 if active_i and i > active_i then i_mod = -1 end -- account for active_unit being pulled out of the bar

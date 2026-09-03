@@ -1,16 +1,24 @@
 local utils = require 'main.utils.basic_utils'
 local Unit = require 'main.unit.unit'
 local Player = require 'main.player.player'
+local Terrain = require 'main.battle.terrain'
 local urls = require 'main.urls'
 local M = {}
 
 M.combat_started = false
 M.units = {}
+M.terrain = {}
 
+-- UNITS
 M.add_unit = function(unit, position)
-    unit.position = position or unit.position
-    unit.previous_position = position or unit.position
-    table.insert(M.units, unit)
+    local combat_unit = utils.deep_copy(unit)
+    combat_unit.momentum = vmath.vector3()
+    combat_unit.advance_attempts = 0
+    combat_unit.facing = 'right'
+    combat_unit.state = 'idle'
+    combat_unit.position = position or unit.position
+    combat_unit.previous_position = position or unit.position
+    table.insert(M.units, combat_unit)
 end
 
 M.remove_unit = function(unit)
@@ -58,6 +66,27 @@ M.get_nearby = function(unit, radius, conditional)
     end
     return r
 end
+-- TERRAIN
+M.add_terrain = function(terrain)
+    table.insert(M.terrain, terrain)
+end
+
+M.get_closest_terrain = function(position)
+    local r, closest_distance_sq = nil, nil
+    for i, v in ipairs(M.terrain) do
+        if not r or r.id ~= v.id then
+            local terrain_position = vmath.vector3(v.x, v.y, 0)
+            local distance_sq = vmath.length_sqr(terrain_position - position)
+            if not closest_distance_sq or distance_sq < closest_distance_sq then
+                r = v
+                closest_distance_sq = distance_sq
+            end
+        end
+    end
+    return r, closest_distance_sq
+end
+
+-- BEHAVIOR
 
 M.get_target = function(unit)
     local acquisition_range = 9999
@@ -149,7 +178,7 @@ M.handle_attacking = function(attacker, dt)
 end
 
 local avoidance_radius = 40
-local stuck_detour_duration = 0.5 -- how long to attempt to get around obstacle before trying again
+local stuck_detour_duration = 0.3 -- how long to attempt to get around obstacle before trying again
 local advance_attempts_before_new_target = 20 -- how long to attempt to advance before getting a new target
 local escape_search_radius = 200
 local escape_attempts_before_switching_directions = 50
@@ -158,7 +187,6 @@ local escape_search_angle = math.pi * 0.5
 M.get_avoidance = function(attacker)
     local avoidance = vmath.vector3()
     local defender = M.get_unit(attacker.target)
-    local offset = defender.position - attacker.position
     for i, v in ipairs(M.units) do
         if v.id ~= defender.id and v.id ~= attacker.id
         then
@@ -170,6 +198,17 @@ M.get_avoidance = function(attacker)
                 local unit_data = Unit.get_data(v.prototype) if distance < unit_data.radius then avoidance_strength = avoidance_strength * 10 end
                 avoidance = avoidance + vmath.normalize(offset_avoidance) * avoidance_strength
             end
+        end
+    end
+    for i, v in ipairs(M.terrain) do
+        local terrain_offset = attacker.position - vmath.vector3(v.x, v.y, 0)
+        local terrain_data = Terrain.get_data(v.prototype)
+        local distance_to_x = math.abs(terrain_offset.x) - terrain_data.hitbox_x/2
+        local distance_to_y = math.abs(terrain_offset.y) - terrain_data.hitbox_y/2
+        local distance_to_edge = math.max(distance_to_x, distance_to_y)
+        if terrain_data.blocks_movement and distance_to_edge < avoidance_radius then
+            local avoidance_strength = 1 - distance_to_edge / avoidance_radius
+            avoidance = avoidance + vmath.normalize(terrain_offset) * avoidance_strength * 0.5
         end
     end
     return avoidance
@@ -196,13 +235,6 @@ M.get_escape_direction = function(attacker)
         end
     end
     if escape_scalar > 0 then return 'right' else return 'left' end
-end
-
-M.move = function(unit, position)
-    if position.x < unit.position.x then unit.facing = 'left' elseif position.x > unit.position.x then unit.facing = 'right' end
-    unit.position = position
-
-    msg.post(urls.battle_proxy, 'unit_moved', {unit=unit})
 end
 
 M.advance = function(attacker, dt)
@@ -274,6 +306,15 @@ M.advance = function(attacker, dt)
     M.move(attacker, desired_position)
 end
 
+-- EVENTS
+
+M.move = function(unit, position)
+    if position.x < unit.position.x then unit.facing = 'left' elseif position.x > unit.position.x then unit.facing = 'right' end
+    unit.position = position
+
+    msg.post(urls.battle_proxy, 'unit_moved', {unit=unit})
+end
+
 M.hit = function(attacker, defender)
     -- if defender is not aggro-ed, then aggro the attacker
     if not defender.target and hash(defender.state) == hash('idle') then defender.target = attacker.id M.update_facing(attacker) end
@@ -315,6 +356,7 @@ end
 M.tick_combat = function(dt)
     if not M.combat_started then return end
     for i, v in ipairs(M.units) do
+        if not v.state then pprint(v) end
         if hash(v.state) == hash('idle') then M.get_target(v) if v.target then v.state = 'acquiring_target' end
         elseif hash(v.state) == hash('acquiring_target') then M.acquire_target(v)
         elseif hash(v.state) == hash('advancing') then M.advance(v, dt)
@@ -326,12 +368,15 @@ end
 
 -- outcome = 'victory' or 'defeat'
 M.end_combat = function(outcome)
+    Player.update_party(M.units)
     M.clean_up()
 
-    -- heal the party
+    -- simulate healing the party between battles
     local heal_percentage = 0.1
     for i, v in ipairs(Player.party) do
         v.hp = math.min(v.hp + math.ceil(v.max_hp * heal_percentage), v.max_hp)
+        -- remove wounded status if > 50% hp
+        if Unit.has_status('wounded', v) and v.hp > v.max_hp * 0.5 then Unit.remove_status('wounded', v) end
     end
 
     if hash(outcome) == hash('victory') then
@@ -341,14 +386,13 @@ M.end_combat = function(outcome)
     end
 end
 
+
+
 M.clean_up = function()
     M.units = {}
+    M.terrain = {}
     M.combat_started = false
     Player.day = Player.day + 1
-    for i, v in ipairs(Player.party) do
-        Unit.reset(v)
-    end
-    utils.remove_all(Player.party, function(w) return w.hp <= 0 end)
 end
 
 
