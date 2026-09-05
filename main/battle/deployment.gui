@@ -60,7 +60,22 @@ nodes {
   id: "deployment_zone"
   parent: "map"
   inherit_alpha: true
-  alpha: 0.1
+  clipping_mode: CLIPPING_MODE_STENCIL
+  clipping_inverted: true
+  alpha: 0.05
+}
+nodes {
+  size {
+    x: 504.0
+    y: 704.0
+  }
+  color {
+    x: 0.0
+    z: 0.0
+  }
+  type: TYPE_BOX
+  id: "deployment_zone_outline"
+  parent: "deployment_zone"
 }
 nodes {
   position {
@@ -371,6 +386,24 @@ nodes {
   id: "unit_template/stance"
   parent: "unit_template/node"
   template_node_child: true
+}
+nodes {
+  position {
+    x: -610.0
+    y: 1706.0
+  }
+  size {
+    x: 100.0
+    y: 100.0
+  }
+  color {
+    x: 0.8
+    z: 0.8
+  }
+  type: TYPE_BOX
+  id: "ghost"
+  inherit_alpha: true
+  alpha: 0.5
 }
 material: "/builtins/materials/gui.material"
 adjust_reference: ADJUST_REFERENCE_PARENT

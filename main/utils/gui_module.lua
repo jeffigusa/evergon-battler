@@ -58,6 +58,7 @@ local create_interactable = function(instance, node)
 
     r.on_hover = f
     r.on_unhover = f
+    r.on_moveover = f
     r.on_press = f
     r.on_release = f
     r.on_dragstart = f
@@ -93,6 +94,9 @@ local unhover = function(interactable)
     interactable.animations.reset()
     interactable.on_unhover()
 end
+local moveover = function(interactable, params)
+    interactable.on_moveover(params)
+end
 
 local handle
 handle = {
@@ -113,6 +117,7 @@ handle = {
             for i, v in ipairs(picked) do
                 if v==topmost_picked or v.ignore_z then
                     if not v.is_hovered then hover(v) end
+                    moveover(v, {x=action.x, y=action.y})
                 end
                 if v ~= topmost_picked and not v.ignore_z then table.insert(unpicked, v) end
             end
@@ -226,8 +231,9 @@ M.handle_input = function(instance, action_id, action)
     else
         for i, v in ipairs(instance.mygui.keybinds or {}) do
             if action_id == hash(v.action_id) then
-                if action.pressed and v.on_pressed then v.on_pressed()
-                elseif action.released and v.on_released then v.on_released()
+                local params = {x=action.x, y=action.y}
+                if action.pressed and v.on_pressed then v.on_pressed(params)
+                elseif action.released and v.on_released then v.on_released(params)
                 end
             end
         end

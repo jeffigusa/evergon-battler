@@ -356,7 +356,6 @@ end
 M.tick_combat = function(dt)
     if not M.combat_started then return end
     for i, v in ipairs(M.units) do
-        if not v.state then pprint(v) end
         if hash(v.state) == hash('idle') then M.get_target(v) if v.target then v.state = 'acquiring_target' end
         elseif hash(v.state) == hash('acquiring_target') then M.acquire_target(v)
         elseif hash(v.state) == hash('advancing') then M.advance(v, dt)

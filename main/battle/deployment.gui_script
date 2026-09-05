@@ -13,48 +13,90 @@ local Player = require 'main.player.player'
 
 local Deployment, Map
 
+local get_active_unit = function() return utils.search(Player.party, function(v) return v.id == Deployment.active_id end) end
+local get_map_position = function (position) return position - gui_utils.get_absolute_position(Map.node) end
+
+local is_in_deployment_area = function(position)
+	-- restrict placement to deployment_zone
+	if not gui.pick_node(Map.deployment_zone_node, position.x, position.y) then return false end
+	return true
+end
+
+local is_valid_deployment_position = function(unit, position)
+	local unit_data = Unit.get_data(unit.prototype)
+
+	if not is_in_deployment_area(position) then return false end
+
+	-- enforce unit collision radius
+	local closest_unit, closest_distance_sq = Battle.get_closest_unit(get_map_position(position))
+	if closest_unit then
+		local closest_unit_data = Unit.get_data(closest_unit.prototype)
+		if closest_distance_sq < (closest_unit_data.radius + unit_data.radius)^2 then return false end
+	end
+
+	-- enforce terrain collision
+	local closest_terrain, closest_terrain_sq = Battle.get_closest_terrain(get_map_position(position))
+	if closest_terrain and utils.point_in_box(get_map_position(position), closest_terrain) then return false end
+	return true
+end
+
+
 Map = {
 	display = {},
 	init = function(self)
-		local map_node = gui.get_node('map')
-		local deployment_zone_node = gui.get_node('deployment_zone')
-		local button = mygui.create_button(map_node, function(params)
+		self.node = gui.get_node('map')
+		self.deployment_zone_node = gui.get_node('deployment_zone')
+		local button = mygui.create_button(self.node, function(params)
 			if #Deployment.to_deploy == 0 then return end
-			local unit = utils.search(Player.party, function(v) return v.id == Deployment.active_id end) assert(unit)
-			local unit_data = Unit.get_data(unit.prototype)
-
-			-- restrict placement to deployment_zone
-			if not gui.pick_node(deployment_zone_node, params.x, params.y) then return end
-
-			-- enforce unit collision radius
+			local unit = get_active_unit() assert(unit)
+			
 			local position = vmath.vector3(params.x, params.y, 0)
-			position = position - gui_utils.get_absolute_position(map_node)
-			local closest_unit, closest_distance_sq = Battle.get_closest_unit(position)
-			if closest_unit then
-				local closest_unit_data = Unit.get_data(closest_unit.prototype)
-				if closest_distance_sq < (closest_unit_data.radius + unit_data.radius)^2 then return end
+			if is_valid_deployment_position(unit, position) then
+				Deployment:place_unit(Deployment.active_id, get_map_position(position))
+				Deployment.ghost:set_unit()
 			end
-
-			-- enforce terrain collision
-			local closest_terrain, closest_terrain_sq = Battle.get_closest_terrain(position)
-			if closest_terrain and utils.point_in_box(position, closest_terrain) then return end
-
-			Deployment:place_unit(Deployment.active_id, position)
 		end)
+
+		button.on_moveover = function(params)
+			local unit = get_active_unit() if not unit then return end
+			local position = vmath.vector3(params.x, params.y, 0)
+			Deployment.ghost:update(position)
+		end
 	end,
 }
 
 Deployment = {
+	ghost = {
+		show = function(self) gui.set_visible(self.node, true) end,
+		hide = function(self) gui.set_visible(self.node, false) end,
+		set_unit = function(self)
+			local unit = get_active_unit() if not unit then self:hide() return end
+			gui_utils.set_texture_with_default_placeholder(self.node, 'units', unit.prototype..'_idle', '_placeholder')
+		end,
+		update = function(self, position)
+			gui.set_position(self.node, position)
+			if #Deployment.to_deploy == 0 then self:hide() return end
+			if is_in_deployment_area(position) then self:show() else self:hide() end
+			if is_valid_deployment_position(get_active_unit(), position) then
+				gui.set_color(self.node, vmath.vector4(0.7, 1, 0.7, 0.5))
+				else gui.set_color(self.node, vmath.vector4(1, 0.3, 0.3, 0.5)) end
+		end
+	},
 	to_deploy = {},
 	display = {},
 	stance = '',
 	active_display = {},
 	init = function(self)
-		local active_unit = Player.party[1]
-		self.active_id = active_unit.id
-		self.active_display.bar = bars.new(gui.get_node('active_unit_hp'), gui.get_node('active_unit_hp_fill'), nil, active_unit.hp, active_unit.max_hp)
+		-- init to_deploy
+		self.active_id = Player.party[1].id
+		self.active_display.bar = bars.new(gui.get_node('active_unit_hp'), gui.get_node('active_unit_hp_fill'), nil, get_active_unit().hp, get_active_unit().max_hp)
 		for i, v in ipairs(Player.party) do	table.insert(self.to_deploy, v)	end
 		self:update_display()
+
+		-- init ghost node
+		self.ghost.node = gui.get_node('ghost')
+		gui.set_size(self.ghost.node, gui.get_size(gui.get_node('unit_template/node')))
+		self.ghost:set_unit()
 
 		-- setup stance buttons
 		local stance_aggressive_node = gui.get_node('button_aggressive')
